@@ -19,12 +19,14 @@ REsp$num_tema_cadastrado < - factor(REsp$num_tema_cadastrado)
 
 estatisticas <-function(df){
   recursos <- df$recurso
-  
+  recursos_sem_pontuacao <- gsub("[[:punct:]]", "", recursos)
   num_palavras <- sapply(strsplit(recursos, "\\s+"),length)
   mediana <- median(num_palavras)
+  media <- mean(num_palavras)
   min_palavras <- min(num_palavras)
   max_palavras <- max(num_palavras)
   cat("Mediana da quantidade de palavras:", mediana, "\n")
+  cat("Quantidade média de palavras:", media, "\n")
   cat("Quantidade mínima de palavras:", min_palavras, "\n")
   cat("Quantidade máxima de palavras:", max_palavras, "\n")
 }
