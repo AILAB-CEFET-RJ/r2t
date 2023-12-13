@@ -27,10 +27,10 @@ class Estrategia(ABC):
         else:
             return f'TOPICS_{stg}{sz}.pkl'
     
-    def saveTopicFile(self,strategy,size,fileEmbeddingName,indice, numTema,topics):
+    def saveTopicFile(self,strategy,size,fileEmbeddingName,indice, numTema,topics,topics_embeddings):
         name=self.createFileName(strategy,fileEmbeddingName,size)                  
         with open(name, "wb") as fOut:
-            pickle.dump({'indice':indice,'topics': topics,'numTema':numTema}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump({'indice':indice,'topics': topics,'numTema':numTema,'topicsEmbeddings':topics_embeddings}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
     
 
 
@@ -46,7 +46,13 @@ class EstrategiaBertopic(Estrategia):
         topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose)
         topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
         representacao = topic_model.get_document_info(stored_sentences)
-        self.saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
+        
+        representacao_topicos = [s.replace('-',' ') for s in representacao['Top_n_words']]
+        
+        #Cria embedding dos topicos
+        sentence_model = SentenceTransformer(model)
+        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=False)       
+        self.saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaBertopicGuided(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
@@ -60,7 +66,12 @@ class EstrategiaBertopicGuided(Estrategia):
         topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose,seed_topic_list=seed_list)
         topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
         representacao = topic_model.get_document_info(stored_sentences)
-        self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
+        representacao_topicos = [s.replace('-',' ') for s in representacao['Top_n_words']]
+        
+        #Cria embedding dos topicos
+        sentence_model = SentenceTransformer(model)
+        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=False)          
+        self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaLexrank(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
@@ -111,8 +122,11 @@ class EstrategiaLexrank(Estrategia):
             print(" ", end='\r')
 
         #print(representacao[1])
+        #Cria embedding dos topicos
+        sentence_model = SentenceTransformer(model)
+        topics_embeddings = sentence_model.encode(representacao,show_progress_bar=False)
             
-        self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao)
+        self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao,topics_embeddings)
 
 # Classe que usa uma estratégia
 class Contexto:
