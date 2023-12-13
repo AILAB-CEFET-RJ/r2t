@@ -1,13 +1,15 @@
 import argparse
 import time
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
+import numpy as np
 from bertopic import BERTopic
 from abc import ABC, abstractmethod
 import pickle
-import numpy as np
 import pandas as pd
 import csv
 import sys
+import nltk
+from LexRank import degree_centrality_scores
 
 
 #Implementando padrao de projeto strategy
@@ -18,14 +20,15 @@ class Estrategia(ABC):
     def executar(self, corpus_embedding, model, seed_list=None,verbose=None):
         pass
 
-    def createFileName(stg,fen,sz):
+    @classmethod
+    def createFileName(cls, stg, fen, sz):
         if 'clean' in fen:
-            return 'TOPICS_' + stg + sz + 'CLEAN.pkl'
-        else
-            return 'TOPICS_' + stg + sz + '.pkl'
+            return f'TOPICS_{stg}{sz}CLEAN.pkl'
+        else:
+            return f'TOPICS_{stg}{sz}.pkl'
     
     def saveTopicFile(self,strategy,size,fileEmbeddingName,indice, numTema,topics):
-        name=createFileName(strategy,fileEmbeddingName,size)                  
+        name=self.createFileName(strategy,fileEmbeddingName,size)                  
         with open(name, "wb") as fOut:
             pickle.dump({'indice':indice,'topics': topics,'numTema':numTema}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
     
@@ -43,7 +46,7 @@ class EstrategiaBertopic(Estrategia):
         topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose)
         topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
         representacao = topic_model.get_document_info(stored_sentences)
-        saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
+        self.saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
         
 class EstrategiaBertopicGuided(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
@@ -57,7 +60,7 @@ class EstrategiaBertopicGuided(Estrategia):
         topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose,seed_topic_list=seed_list)
         topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
         representacao = topic_model.get_document_info(stored_sentences)
-        saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
+        self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao['Top_n_words'])
         
 class EstrategiaLexrank(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
@@ -74,16 +77,14 @@ class EstrategiaLexrank(Estrategia):
             stored_embeddings = stored_data['embeddings']
             stored_number = stored_data['numTema']
         print("Executando Estratégia Lexrank")
-        #topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose)
-        #topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
-        #representacao = topic_model.get_document_info(stored_sentences)
-        
+
         for text,embeddings in zip(stored_sentences,stored_embeddings):
             topics = []
             summary = ""
 
             #Split the document into sentences
             sentences = nltk.sent_tokenize(text)
+            
             #print("Num sentences:", len(sentences))
 
             #Compute the sentence embeddings
@@ -100,20 +101,26 @@ class EstrategiaLexrank(Estrategia):
 
             #Print the 5 sentences with the highest scores
             #print("\n\nSummary:")
-            for idx in most_central_sentence_indices[0:10]:
-                topics.append(text[idx].strip())
+            for idx in most_central_sentence_indices[0:size]:
+                topics.append(sentences[idx].strip())
             summary = "".join(topics)
             representacao.append(summary)
+            sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+            sys.stdout.write(f' Percentual concluído: {len(representacao)/len(stored_indice)*100:.2f}%')
+            sys.stdout.flush()  # Força a impressão imediata
+            print(" ", end='\r')
+
+        #print(representacao[1])
             
-        saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao)
+        self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao)
 
 # Classe que usa uma estratégia
 class Contexto:
     def __init__(self, estrategia):
         self.estrategia = estrategia
-
-    def executar_estrategia(self, corpus_embedding, model, seed_list=None,verbose=None):
-        self.estrategia.executar(corpus_embedding, model, seed_list,verbose)
+        
+    def executar_estrategia(self, corpus_embedding, size, model, seed_list=None, verbose=None):
+        self.estrategia.executar(corpus_embedding, size, model, seed_list, verbose)
 
 def main(args):
     print("############### PROGRAMA DE GERAÇÃO DE TÓPICOS ###############")
@@ -135,7 +142,7 @@ def main(args):
         return
 
     contexto = Contexto(estrategia)
-    contexto.executar_estrategia(args.corpus_embedding,args.size, args.model, args.seed_list,verbose)
+    contexto.executar_estrategia(args.corpus_embedding,int(args.size), args.model, args.seed_list,verbose)
 
     print("Salvando log ...")
     tempo_fim = time.time()
