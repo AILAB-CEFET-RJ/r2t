@@ -102,19 +102,25 @@ def clean_text(doc,begin=None):
         return final_doc
     else:
         return doc
+
+def createFileName(name,clean):
+    if clean:
+        return f'{name}_EMBEDDING_CLEAN.pkl'
+    else:
+        return f'{name}_EMBEDDING.pkl'
     
-def create_embedding(indice,corpus,num,model,v,c):
+def create_embedding(file,indice,corpus,num,model,v,c):
     sentence_model = SentenceTransformer(model)
+    nameEmbedding = createFileName(file.name.split('.')[0],c)
+    #verbose
     if v:
         corpus_embedding = sentence_model.encode(corpus,show_progress_bar=True)
     else:
         corpus_embedding = sentence_model.encode(corpus,show_progress_bar=False)
-    if c:
-        with open('corpus_embedding_clean.pkl', "wb") as fOut:
+    
+    with open(nameEmbedding, "wb") as fOut:
             pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open('corpus_embedding.pkl', "wb") as fOut:
-            pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
+
     
 def main(args):
     print("############### PROGRAMA DE GERAÇÃO DE EMBEDDINGS ###############")
@@ -129,7 +135,11 @@ def main(args):
     nltk.download('punkt')
     verbose = args.verbose
     corpus = read_csv_file(args.corpus_csv_file,args.clean,args.begin_point,args.column)
-    create_embedding(corpus['indice'],corpus[args.column],corpus['num_tema_cadastrado'],args.model,args.verbose,args.clean)
+    
+    #Se não houver uma coluna indice, cria uma
+    if 'indice' not in corpus.columns:
+        corpus['indice'] = range(1,len(corpus)+1)
+    create_embedding(args.corpus_csv_file,corpus['indice'],corpus[args.column],corpus['num_tema_cadastrado'],args.model,args.verbose,args.clean)
     
     print("Salvando log ...")
     tempo_fim = time.time()
@@ -157,7 +167,7 @@ if __name__=="__main__":
     
     parser = argparse.ArgumentParser(description='Generate text embedding using Sentence-BERT model')
     parser.add_argument('corpus_csv_file', type=argparse.FileType('r'), help='File containing the corpus')
-    parser.add_argument('column',default='recurso',nargs='?',help='Column that contains the text to be transformed into embedding : Default = recurso')
+    parser.add_argument('column',help='Column that contains the text to be transformed into embedding')
     parser.add_argument('model',default='distiluse-base-multilingual-cased-v1',nargs='?', help='The Sentence-BERT model used to generate embedding : Default = distiluse-base-multilingual-cased-v1')
     parser.add_argument('--clean',action='store_true',help='Remove stopwords before creating embedding')
     parser.add_argument('--begin_point',help='Word that marks the beginning of essential part of the text')
