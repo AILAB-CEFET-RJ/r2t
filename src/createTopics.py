@@ -22,7 +22,8 @@ class Estrategia(ABC):
 
     @classmethod
     def createFileName(cls, stg, fen, sz):
-        if 'clean' in fen:
+        
+        if 'clean' in fen.lower():
             return f'TOPICS_{stg}{sz}CLEAN.pkl'
         else:
             return f'TOPICS_{stg}{sz}.pkl'
@@ -31,7 +32,7 @@ class Estrategia(ABC):
         name=self.createFileName(strategy,fileEmbeddingName,size)                  
         with open(name, "wb") as fOut:
             pickle.dump({'indice':indice,'topics': topics,'numTema':numTema,'topicsEmbeddings':topics_embeddings}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
-    
+        print(f"Resumo de cada texto do corpus e respectivos embeddings salvos no arquivo {name}") 
 
 
 class EstrategiaBertopic(Estrategia):
@@ -51,7 +52,7 @@ class EstrategiaBertopic(Estrategia):
         
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
-        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=False)       
+        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)       
         self.saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaBertopicGuided(Estrategia):
@@ -70,7 +71,7 @@ class EstrategiaBertopicGuided(Estrategia):
         
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
-        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=False)          
+        topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)          
         self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaLexrank(Estrategia):
@@ -87,7 +88,7 @@ class EstrategiaLexrank(Estrategia):
             stored_sentences = stored_data['sentences']
             stored_embeddings = stored_data['embeddings']
             stored_number = stored_data['numTema']
-        print("Executando Estratégia Lexrank")
+        print("Executando Estratégia Lexrank - Aguarde conclusão")
 
         for text,embeddings in zip(stored_sentences,stored_embeddings):
             topics = []
@@ -124,7 +125,7 @@ class EstrategiaLexrank(Estrategia):
         #print(representacao[1])
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
-        topics_embeddings = sentence_model.encode(representacao,show_progress_bar=False)
+        topics_embeddings = sentence_model.encode(representacao,show_progress_bar=True)
             
         self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao,topics_embeddings)
 
