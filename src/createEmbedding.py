@@ -117,7 +117,7 @@ def create_embedding(file,indice,corpus,num,model,v,c):
     
     with open(nameEmbedding, "wb") as fOut:
             pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
-    print(f"Embedding salvo no arquivo {nameEmbedding}"   
+    print(f"Embedding salvo no arquivo {nameEmbedding}")   
     
 def main(args):
     print("############### PROGRAMA DE GERAÇÃO DE EMBEDDINGS ###############")
