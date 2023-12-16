@@ -12,7 +12,37 @@ import sys
 
 verbose = False
 
-def read_csv_file(path,clean,begin,column):
+
+def select_important(doc,mark):
+    match = re.search(fr' {mark}[^\n]*',doc)
+    if match:
+        start = match.start()
+        final_doc = doc[start:]
+    else:
+        final_doc = doc
+    return final_doc    
+        #Palavras irrelevantes
+
+    
+def clean_text(text):
+
+    stop_words = set(stopwords.words('portuguese'))
+    stop_words.update(["nº","cep","telefone","rua","avenida","endereço","fax","fones"])
+    stop_words.update(["egrégia","egrégio","eg","e.g."])
+    stop_words.update(["copy","reg","trade","ldquo","rdquo","lsquo","rsquo","bull","middot","sdot","ndash","mdash","cent","pound"])
+    stop_words.update(["euro","ne","frac12","frac14","frac34","deg","larr","rarr","uarr","darr","egrave","eacute","ccedil","hellip"])
+    
+    tokens = nltk.word_tokenize(text, language='portuguese')
+    tokens_cleaned = [token for token in tokens if token not in stop_words]
+    text_cleaned = ' '.join(tokens_cleaned)    
+    match_pattern = [r'\b_+(?:\d+|[a-zA-Z]+)?\b',r'https?://\S+',r'www\.\S+',r'\S+@\S+',r'^\d{3}.\d{3}.\d{3}-\d{2}$',r'^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$',r'\d{2}/\d{2}/\d{4}[ ,]',r'procuradoria regional (federal|da união) da \d+[ªa] região',r'tribunal regional federal[ da] \d+[ªa] região',r'advocacia[ -]geral da união',r'(excelentíssimo|senhor|vice-presidente|desembargador|\(a\))',r'procuradoria[ -]geral federal',r'escritório de advocacia',r'[ superior] tribunal de justiça',r'supremo tribunal federal',r'fones',r'fax']
+    subs = [''] * len(match_pattern)
+
+    for match_pattern, subs in zip(match_pattern,subs):
+        text_cleaned = re.sub(match_pattern,subs,text_cleaned)
+    return text_cleaned
+    
+def process_corpus(path,clean,begin,column):
     try:
         resp = pd.read_csv(path)
         size = len(resp)
@@ -22,33 +52,37 @@ def read_csv_file(path,clean,begin,column):
         
         print("############### Lendo registros do corpus ###############")
         for i, linha in resp.iterrows():
-          tipo = type(linha[column])
-          try:
-            #tratamento necessário, textos estavam sendo identificados como float
-            if (tipo == str):
-              if clean:
-                  sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
-                  sys.stdout.write(f' Percentual concluído: {i/size*100:.2f}%')
-                  sys.stdout.flush()  # Força a impressão imediata
-                  doc_cleaned = clean_text(linha[column],begin)
-                  num_cadastrado.append(int(linha['num_tema_cadastrado']))
-                  docs.append(doc_cleaned)
-                  indice.append(i)     
-              else:
-                  sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
-                  sys.stdout.write(f' Percentual concluído: {i/size*100:.2f}%')
-                  sys.stdout.flush()  # Força a impressão imediata
-                  print("Percentual concluído:", end='\r')
-                  percentual_concluido = (i / size) * 100
-                  print(f'Percentual concluído: {percentual_concluido:.2f}%', end='', flush=True)
-                  num_cadastrado.append(int(linha['num_tema_cadastrado']))
-                  docs.append(linha[column])
-                  indice.append(i)
+            #Exibe percentual concluido
+            sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+            sys.stdout.write(f' Percentual concluído: {i/size*100:.2f}%')
+            sys.stdout.flush()  # Força a impressão imediata
+            tipo = type(linha[column])
+            text = linha[column]
+            try:
+                #tratamento necessário, textos estavam sendo identificados como float
+                if (tipo == str):
+                    #Se houver um marco de trecho relevante do texto
+                    if begin:
+                        text = select_important(text,begin)
+                    
+                    #Se tiver de limpar o texto
+                    if clean:
+                        text_cleaned = clean_text(text)
+                        num_cadastrado.append(int(linha['num_tema_cadastrado']))
+                        docs.append(text_cleaned)
+                        indice.append(i)     
+                    else:
+                        sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+                        sys.stdout.write(f' Percentual concluído: {i/size*100:.2f}%')
+                        sys.stdout.flush()  # Força a impressão imediata
+                        num_cadastrado.append(int(linha['num_tema_cadastrado']))
+                        docs.append(text)
+                        indice.append(i)
 
-          except Exception as erro:
-            print(f"Erro ao capturar numero de tema cadastrado {i} : {erro}")
-            continue
-        print("\nConcluído!")    
+            except Exception as erro:
+                print(f"Erro ao capturar numero de tema cadastrado {i} : {erro}")
+                continue
+                
         corpus = pd.DataFrame()
         corpus["indice"]=indice
         corpus["num_tema_cadastrado"]=num_cadastrado
@@ -65,43 +99,6 @@ def read_csv_file(path,clean,begin,column):
         
     return corpus
 
-
-def remove_stopwords(text):
-    stop_words = set(stopwords.words('portuguese'))
-    stop_words.update(["nº","cep","telefone","rua","avenida","endereço","fax","fones"])
-    stop_words.update(["egrégia","egrégio","eg","e.g."])
-    stop_words.update(["copy","reg","trade","ldquo","rdquo","lsquo","rsquo","bull","middot","sdot","ndash","mdash","cent","pound"])
-    stop_words.update(["euro","ne","frac12","frac14","frac34","deg","larr","rarr","uarr","darr","egrave","eacute","ccedil","hellip"])
-    tokens = nltk.word_tokenize(text, language='portuguese')
-    tokens_cleaned = [token for token in tokens if token not in stop_words]
-    text_cleaned = ' '.join(tokens_cleaned)
-    return text_cleaned
-
-def clean_text(doc,begin=None):
-    #ignora limpeza
-    ignora = "N"
-    
-    if(ignora == "N"):
-        final_doc = ""
-        doc = doc.lower()
-        #Tenta identificar parte relevante do documento
-        if begin:
-            match = re.search(fr' {begin}[^\n]*',doc)
-        #Palavras irrelevantes
-        match_pattern = [r'\b_+(?:\d+|[a-zA-Z]+)?\b',r'https?://\S+',r'www\.\S+',r'\S+@\S+',r'^\d{3}.\d{3}.\d{3}-\d{2}$',r'^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$',r'\d{2}/\d{2}/\d{4}[ ,]',r'procuradoria regional (federal|da união) da \d+[ªa] região',r'tribunal regional federal[ da] \d+[ªa] região',r'advocacia[ -]geral da união',r'(excelentíssimo|senhor|vice-presidente|desembargador|\(a\))',r'procuradoria[ -]geral federal',r'escritório de advocacia',r'[ superior] tribunal de justiça',r'supremo tribunal federal',r'fones',r'fax']
-        subs = [''] * len(match_pattern)
-        if match:
-            start = match.start()
-            final_doc = doc[start:]
-        else:
-            final_doc = doc
-        for match_pattern, subs in zip(match_pattern,subs):
-            final_doc = re.sub(match_pattern,subs,final_doc)
-        final_doc = remove_stopwords(final_doc)
-
-        return final_doc
-    else:
-        return doc
 
 def createFileName(name,clean):
     if clean:
@@ -120,7 +117,7 @@ def create_embedding(file,indice,corpus,num,model,v,c):
     
     with open(nameEmbedding, "wb") as fOut:
             pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
-
+    print(f"Embedding salvo no arquivo {nameEmbedding}"   
     
 def main(args):
     print("############### PROGRAMA DE GERAÇÃO DE EMBEDDINGS ###############")
@@ -134,7 +131,7 @@ def main(args):
     nltk.download('stopwords')
     nltk.download('punkt')
     verbose = args.verbose
-    corpus = read_csv_file(args.corpus_csv_file,args.clean,args.begin_point,args.column)
+    corpus = process_corpus(args.corpus_csv_file,args.clean,args.begin_point,args.column)
     
     #Se não houver uma coluna indice, cria uma
     if 'indice' not in corpus.columns:
