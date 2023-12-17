@@ -75,32 +75,34 @@ class EstrategiaBertopicGuided(Estrategia):
         self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaLexrank(Estrategia):
-    def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
+    def executar(self, corpus_embedding,size, name_model, seed_list=None,verbose=None):
         stored_indice = []
         stored_sentences = []
         stored_embeddings = []
         stored_number = []
         representacao = []
         
+        model = SentenceTransformer(name_model)
+        
         with open(corpus_embedding, "rb") as fIn:
             stored_data = pickle.load(fIn)
             stored_indice = stored_data['indice']
             stored_sentences = stored_data['sentences']
-            stored_embeddings = stored_data['embeddings']
             stored_number = stored_data['numTema']
         print("Executando Estratégia Lexrank - Aguarde conclusão")
 
-        for text,embeddings in zip(stored_sentences,stored_embeddings):
+        for text in (stored_sentences):
+
             topics = []
             summary = ""
 
             #Split the document into sentences
             sentences = nltk.sent_tokenize(text)
-            
+
             #print("Num sentences:", len(sentences))
 
             #Compute the sentence embeddings
-            #embeddings = model.encode(sentences, convert_to_tensor=True)
+            embeddings = model.encode(sentences, convert_to_tensor=True)
 
             #Compute the pair-wise cosine similarities
             cos_scores = util.cos_sim(embeddings, embeddings).numpy()
@@ -124,7 +126,7 @@ class EstrategiaLexrank(Estrategia):
 
         #print(representacao[1])
         #Cria embedding dos topicos
-        sentence_model = SentenceTransformer(model)
+        sentence_model = SentenceTransformer(name_model)
         topics_embeddings = sentence_model.encode(representacao,show_progress_bar=True)
             
         self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao,topics_embeddings)
@@ -140,7 +142,7 @@ class Contexto:
 def main(args):
     print("############### PROGRAMA DE GERAÇÃO DE TÓPICOS ###############")
     print("############### Configuração ###############")
-    print(f"Type of generating topics : {args.type}")
+    print(f"Topic generation type : {args.type}")
 
     tempo_inicio = time.time()
     verbose = args.verbose
