@@ -10,6 +10,7 @@ import csv
 import sys
 import nltk
 from LexRank import degree_centrality_scores
+import string
 
 
 #Implementando padrao de projeto strategy
@@ -27,13 +28,26 @@ class Estrategia(ABC):
             return f'TOPICS_{stg}{sz}CLEAN.pkl'
         else:
             return f'TOPICS_{stg}{sz}.pkl'
+        
+    def remove_punctuation(self,text):
+        translator = str.maketrans('', '', string.punctuation)
+        text_without_punctuation = text.translate(translator)
+        return text_without_punctuation
     
     def saveTopicFile(self,strategy,size,fileEmbeddingName,indice, numTema,topics,topics_embeddings):
         name=self.createFileName(strategy,fileEmbeddingName,size)                  
         with open(name, "wb") as fOut:
             pickle.dump({'indice':indice,'topics': topics,'numTema':numTema,'topicsEmbeddings':topics_embeddings}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
-        print(f"Resumo de cada texto do corpus e respectivos embeddings salvos no arquivo {name}") 
-
+        print(f"Resumo de cada texto do corpus e respectivos embeddings salvos no arquivo {name}")
+    
+    def format_seed_list(self,seed):
+        temas_repetitivos_eproc = pd.read_csv(seed, sep=',' )
+        temas_seed_list = []
+        temas_seed = temas_repetitivos_eproc[['tema']].copy()
+        for indice,linha in temas_seed.iterrows():
+            seed = self.remove_punctuation(linha['tema'])
+            temas_seed_list.append(seed.split())
+        return temas_seed_list
 
 class EstrategiaBertopic(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
@@ -50,6 +64,10 @@ class EstrategiaBertopic(Estrategia):
         
         representacao_topicos = [s.replace('-',' ') for s in representacao['Top_n_words']]
         
+        sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+        sys.stdout.write(f' Percentual concluído: {len(representacao)/len(stored_indice)*100:.2f}%')
+        sys.stdout.flush()  # Força a impressão imediata
+        print(" ", end='\r')
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
         topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)       
@@ -64,11 +82,16 @@ class EstrategiaBertopicGuided(Estrategia):
             stored_embeddings = stored_data['embeddings']
             stored_number = stored_data['numTema']
         print("Executando Estratégia Bertopic Guiada")
-        topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose,seed_topic_list=seed_list)
+        seed = self.format_seed_list(seed_list)
+        topic_model = BERTopic(embedding_model=model,top_n_words=size,verbose=verbose,seed_topic_list=seed)
         topics, probs = topic_model.fit_transform(stored_sentences,stored_embeddings)
         representacao = topic_model.get_document_info(stored_sentences)
         representacao_topicos = [s.replace('-',' ') for s in representacao['Top_n_words']]
         
+        sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+        sys.stdout.write(f' Percentual concluído: {len(representacao)/len(stored_indice)*100:.2f}%')
+        sys.stdout.flush()  # Força a impressão imediata
+        print(" ", end='\r')
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
         topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)          
@@ -97,9 +120,10 @@ class EstrategiaLexrank(Estrategia):
             summary = ""
 
             #Split the document into sentences
-            sentences = nltk.sent_tokenize(text)
+            sentences = nltk.sent_tokenize(text,language='portuguese')
 
             #print("Num sentences:", len(sentences))
+            #print(sentences)
 
             #Compute the sentence embeddings
             embeddings = model.encode(sentences, convert_to_tensor=True)
@@ -108,7 +132,7 @@ class EstrategiaLexrank(Estrategia):
             cos_scores = util.cos_sim(embeddings, embeddings).numpy()
 
             #Compute the centrality for each sentence
-            centrality_scores = degree_centrality_scores(cos_scores, threshold=None)
+            centrality_scores = degree_centrality_scores(cos_scores, threshold=0.3)
 
             #We argsort so that the first element is the sentence with the highest score
             most_central_sentence_indices = np.argsort(-centrality_scores)
@@ -157,7 +181,6 @@ def main(args):
     else:
         print(f"Tipo de geração de tópicos não reconhecido: {args.type}")
         return
-
     contexto = Contexto(estrategia)
     contexto.executar_estrategia(args.corpus_embedding,int(args.size), args.model, args.seed_list,verbose)
 
@@ -179,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', action='store_true', help='Increase the verbosity level')
 
     # Para modelagem guiada é necessario ter listas de topicos iniciais
-    parser.add_argument('--seed_list', nargs='+', help='Seed list (required if type is G)')
+    parser.add_argument('--seed_list', nargs='?', help='Seed list (required if type is G)')
 
     args = parser.parse_args()
     main(args)
