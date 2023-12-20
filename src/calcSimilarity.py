@@ -8,6 +8,7 @@ import argparse
 import time
 import pickle
 import sys
+from sentence_transformers import SentenceTransformer, util
 
 # Instalação dos pacotes necessários
 subprocess.run(["pip", "install", "rank_bm25","numexpr"])
@@ -40,18 +41,17 @@ def create_list_similarity_bm25(temas ,k,tema_real):
   ranking = sorted_list[:k]
   return ranking,lista_tema_real
 
-def calc_similarity(topics, temas ,k,tema_real):
+def calc_similarity_cosine(topics, temas_embeddings,temas_numTema ,k,tema_real):
   lista_similaridade = []
   lista_tema_real = []
   
-  for indice, tupla_num_tema in enumerate(temas):
-      query_embedding = sentence_model.encode(topics)
+  for temas_embeddings,temas_numTema in zip(temas_embeddings,temas_numTema):
+      query_embedding = topics
       #print(f"Tema {indice} : {tupla_num_tema[0]}")
-      tema_cleaned = clean_text(tupla_num_tema[0])
-      text_embedding = sentence_model.encode(tema_cleaned)
-      tensor_similaridade = util.cos_sim(query_embedding, text_embedding)
+      #tema_cleaned = clean_text(temas_embeddings)
+      tensor_similaridade = util.cos_sim(query_embedding, temas_embeddings)
       valor_similaridade = tensor_similaridade.item()
-      tupla = (tupla_num_tema[1],valor_similaridade)
+      tupla = (temas_numTema,valor_similaridade)
       lista_similaridade.append(tupla)
 
   sorted_list = sort_list(lista_similaridade)
@@ -184,7 +184,66 @@ class EstrategiaBM25(Estrategia):
                 writer = csv.writer(arquivo)
                 writer.writerow(dados)
 
-        print(f"Similaridade Computada -dados salvos no arquivo {file_similarity}") 
+        print(f"Similaridade Computada -dados salvos no arquivo {file_similarity}")
+class EstrategiaCosine(Estrategia):
+    def executar(self, corpus,temas, typeSim,rank,verbose=None):
+        temas_data = pd.DataFrame()
+        corpus_data = pd.DataFrame()
+        with open(corpus, "rb") as fIn:
+            data = pickle.load(fIn)
+            corpus_data['indice'] = data['indice']
+            corpus_data['topics'] = data['topics']
+            corpus_data['topicsEmbeddings'] = data['topicsEmbeddings'].tolist()
+            corpus_data['numTema'] = data['numTema']
+        with open(temas, "rb") as fIn:
+            data = pickle.load(fIn)
+            #Columns
+            temas_data['indice'] = data['indice']
+            temas_data['sentences'] = data['sentences']
+            temas_data['embeddings'] = data['embeddings'].tolist()
+            temas_data['numTema']= data['numTema']
+        print("Calculando Similaridade por Cosseno")
+        
+        #Salva dados de similaridade em arquivo
+        file_similarity = createFile(corpus,typeSim,rank)
+        #Processamento do texto alvo
+        temas = []
+
+        for indice, linha in corpus_data.iterrows():
+            sys.stdout.write("\r ")  # \r faz o cursor retroceder ao início da linha
+            sys.stdout.write(f' Percentual concluído: {indice/len(corpus_data)*100:.2f}%')
+            sys.stdout.flush()  # Força a impressão imediata
+            print(" ", end='\r')
+            dados = []
+            dados.append(indice)
+            #numero do tema cadastrado por um analista
+            try:
+                dados.append(int(linha['numTema']))
+            except Exception as erro:
+                print(f"Erro ao capturar numero de tema cadastrado {indice}")
+                continue
+            #try:
+            ranking , lista_tema_real = calc_similarity_cosine(linha['topicsEmbeddings'], temas_data['embeddings'],temas_data['numTema'], rank, linha['numTema'])
+            ##except Exception as erro:
+                #print(f"Erro calculo similaridade indice {indice}") 
+                #continue
+
+            for i, tupla_num_tema in enumerate(ranking):
+                #captura numero do tema sugerido e valor da similaridade
+                dados.append(tupla_num_tema[0])
+                dados.append(tupla_num_tema[1])
+
+            if(lista_tema_real):
+                dados.append(lista_tema_real[0])
+                dados.append(lista_tema_real[1])
+            else:
+                dados.append("NA")
+                dados.append("NA")
+            with open(file_similarity, mode='a', newline='') as arquivo:
+                writer = csv.writer(arquivo)
+                writer.writerow(dados)
+
+        print(f"Similaridade Computada -dados salvos no arquivo {file_similarity}")
 
 # Classe que usa uma estratégia
 class Contexto:
