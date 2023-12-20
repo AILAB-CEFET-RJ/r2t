@@ -100,6 +100,17 @@ class Estrategia(ABC):
         pass
 
 class EstrategiaBM25(Estrategia):
+    def __init__(self):
+        self.bm25 = None
+        
+    def calc_scores_bm25(self,topico):
+        if self.bm25 is None:
+            raise ValueError("BM25 not initialized.")
+        query = topico.replace("-","")
+        tokenized_query = query.split()
+        doc_scores = self.bm25.get_scores(tokenized_query)
+        return doc_scores
+
     def executar(self, corpus,temas, typeSim,rank,verbose=None):
         temas_data = pd.DataFrame()
         corpus_data = pd.DataFrame()
@@ -127,7 +138,8 @@ class EstrategiaBM25(Estrategia):
             tema_clean = remove_punctuation(linha['sentences'])
             temas.append(tema_clean)           
         tokenized_corpus = [doc.split(" ") for doc in temas]
-        bm25 = BM25Okapi(tokenized_corpus)
+        self.bm25 = BM25Okapi(tokenized_corpus)
+
         
         
         #Processamento da consulta
@@ -136,12 +148,11 @@ class EstrategiaBM25(Estrategia):
             sys.stdout.write(f' Percentual concluído: {indice/len(corpus_data)*100:.2f}%')
             sys.stdout.flush()  # Força a impressão imediata
             print(" ", end='\r')
-            doc_scores = bm25.get_scores(linha['topics'])
+            doc_scores = self.calc_scores_bm25(linha['topics'])
             temas_classificados = temas_data[['numTema']].copy()
-            temas_classificados['similaridade']=pd.Series(doc_scores)
+            temas_classificados['similaridade']= doc_scores
             temas_classificados.columns = ['numTema','similaridade']
             list_temas_classificados = list(temas_classificados.itertuples(index=False, name=None))
-
             dados = []
             dados.append(indice)
               #numero do tema cadastrado por um analista
