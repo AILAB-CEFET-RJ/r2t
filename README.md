@@ -12,6 +12,10 @@ criação de tópicos bertopic guiada : python createTopics.py REsp_completo_EMB
 
 criação de tópicos bertopic : python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 B -v
 
-calculo de similaridade : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 B
+calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 B
+
+calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 C
+
+calculo de similaridade combinada: python calcSimilarityCombined.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING_CLEAN.pkl 0.4 0.6 6 -v
 
 computação de métricas : python metrics.py CLASSFIED_TOPICS_B10CLEAN_BM25.csv
