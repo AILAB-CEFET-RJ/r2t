@@ -14,7 +14,7 @@ criação de tópicos bertopic : python createTopics.py REsp_completo_EMBEDDING_
 
 calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 B
 
-calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 C
+calculo de similaridade cosseno : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING.pkl 6 C
 
 calculo de similaridade combinada: python calcSimilarityCombined.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING_CLEAN.pkl 0.4 0.6 6 -v
 
