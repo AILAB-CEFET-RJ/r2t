@@ -137,7 +137,7 @@ class EstrategiaLexrank(Estrategia):
             #We argsort so that the first element is the sentence with the highest score
             most_central_sentence_indices = np.argsort(-centrality_scores)
 
-            #Print the 5 sentences with the highest scores
+
             #print("\n\nSummary:")
             for idx in most_central_sentence_indices[0:size]:
                 topics.append(sentences[idx].strip())
