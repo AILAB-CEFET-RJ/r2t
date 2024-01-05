@@ -9,6 +9,7 @@ import time
 import pickle
 import sys
 from sentence_transformers import SentenceTransformer, util
+import torch
 
 # Instalação dos pacotes necessários
 subprocess.run(["pip", "install", "rank_bm25","numexpr"])
@@ -244,6 +245,7 @@ class EstrategiaCosine(Estrategia):
                 writer.writerow(dados)
 
         print(f"Similaridade Computada -dados salvos no arquivo {file_similarity}")
+
 
 # Classe que usa uma estratégia
 class Contexto:
