@@ -16,6 +16,8 @@ calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl tema
 
 calculo de similaridade cosseno : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING_CLEAN.pkl 6 C
 
+copia arquivo contendo recurso com embeddings alterando chaves do dicionário : python copyFile.py REsp_completo_EMBEDDING_CLEAN.pkl
+
 computação de métricas : python metrics.py CLASSFIED_TOPICS_B10CLEAN_BM25.csv
 
 
