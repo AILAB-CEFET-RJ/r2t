@@ -71,6 +71,7 @@ def process_corpus(data_file):
     run_df = DataFrame.from_dict(ranx_dict)
     run_df['q_id'] = run_df['q_id'].astype(str)
     run_df['doc_id'] = run_df['doc_id'].astype(str)
+    run_df['score'] = run_df['score'].astype(float)
     run = Run.from_df(
         df=run_df,
         q_id_col="q_id",
