@@ -34,7 +34,7 @@ class Estrategia(ABC):
         text_without_punctuation = text.translate(translator)
         return text_without_punctuation
     
-    def saveTopicFile(self,strategy,size,fileEmbeddingName,indice, numTema,topics,topics_embeddings):
+    def gerarResumo(self,strategy,size,fileEmbeddingName,indice, numTema,topics,topics_embeddings):
         name=self.createFileName(strategy,fileEmbeddingName,size)                  
         with open(name, "wb") as fOut:
             pickle.dump({'indice':indice,'topics': topics,'numTema':numTema,'topicsEmbeddings':topics_embeddings}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
@@ -49,7 +49,7 @@ class Estrategia(ABC):
             temas_seed_list.append(seed.split())
         return temas_seed_list
 
-class EstrategiaBertopic(Estrategia):
+class EstrategiaBERTopic(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
         with open(corpus_embedding, "rb") as fIn:
             stored_data = pickle.load(fIn)
@@ -71,9 +71,9 @@ class EstrategiaBertopic(Estrategia):
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
         topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)       
-        self.saveTopicFile('B',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
+        self.gerarResumo('B',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
-class EstrategiaBertopicGuided(Estrategia):
+class EstrategiaBERTopicGuiada(Estrategia):
     def executar(self, corpus_embedding,size, model, seed_list=None,verbose=None):
         with open(corpus_embedding, "rb") as fIn:
             stored_data = pickle.load(fIn)
@@ -95,7 +95,7 @@ class EstrategiaBertopicGuided(Estrategia):
         #Cria embedding dos topicos
         sentence_model = SentenceTransformer(model)
         topics_embeddings = sentence_model.encode(representacao_topicos,show_progress_bar=True)          
-        self.saveTopicFile('G',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
+        self.gerarResumo('G',size,corpus_embedding,stored_indice,stored_number,representacao_topicos,topics_embeddings)
         
 class EstrategiaLexrank(Estrategia):
     def executar(self, corpus_embedding,size, name_model, seed_list=None,verbose=None):
@@ -153,14 +153,14 @@ class EstrategiaLexrank(Estrategia):
         sentence_model = SentenceTransformer(name_model)
         topics_embeddings = sentence_model.encode(representacao,show_progress_bar=True)
             
-        self.saveTopicFile('L',size,corpus_embedding,stored_indice,stored_number,representacao,topics_embeddings)
+        self.gerarResumo('L',size,corpus_embedding,stored_indice,stored_number,representacao,topics_embeddings)
 
 # Classe que usa uma estratégia
 class Contexto:
     def __init__(self, estrategia):
         self.estrategia = estrategia
         
-    def executar_estrategia(self, corpus_embedding, size, model, seed_list=None, verbose=None):
+    def executarEstrategia(self, corpus_embedding, size, model, seed_list=None, verbose=None):
         self.estrategia.executar(corpus_embedding, size, model, seed_list, verbose)
 
 def main(args):
@@ -173,16 +173,16 @@ def main(args):
 
     # Cria um contexto com a estratégia adequada
     if args.type == 'B':
-        estrategia = EstrategiaBertopic()
+        estrategia = EstrategiaBERTopic()
     elif args.type == 'G':
-        estrategia = EstrategiaBertopicGuided()
+        estrategia = EstrategiaBERTopicGuiada()
     elif args.type == 'L':
         estrategia = EstrategiaLexrank()
     else:
         print(f"Tipo de geração de tópicos não reconhecido: {args.type}")
         return
     contexto = Contexto(estrategia)
-    contexto.executar_estrategia(args.corpus_embedding,int(args.size), args.model, args.seed_list,verbose)
+    contexto.executarEstrategia(args.corpus_embedding,int(args.size), args.model, args.seed_list,verbose)
 
     print("Salvando log ...")
     tempo_fim = time.time()
