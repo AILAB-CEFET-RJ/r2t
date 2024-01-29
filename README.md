@@ -8,6 +8,8 @@ criação embedding temas : python createEmbedding.py temas_repetitivos.csv tema
 
 criação de tópicos lexrank 10 sentenças : python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 L -v
 
+criação de tópicos lexrank guiada 50 sentenças sem remoção de termos : python createTopics.py REsp_completo_EMBEDDING.pkl 50 X -v --seed_list temas_repetitivos.csv
+
 criação de tópicos bertopic guiada 10 tópicos : python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 G -v --seed_list temas_repetitivos.csv
 
 criação de tópicos bertopic 10 tópicos: python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 B -v
