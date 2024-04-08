@@ -309,7 +309,7 @@ class EstrategiaLexrankGuiada(Estrategia):
         sentence_model = SentenceTransformer(name_model)
         topics_embeddings = sentence_model.encode(representacao, show_progress_bar=True)
 
-        self.gerarResumo('X0_', size, corpus_embedding, stored_indice, stored_number, representacao, topics_embeddings)
+        self.gerarResumo('X', size, corpus_embedding, stored_indice, stored_number, representacao, topics_embeddings)
 
 # Classe que usa uma estratégia
 class Contexto:
