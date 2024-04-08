@@ -72,6 +72,7 @@ def process_corpus(path,column):
         size = len(resp)
         docs = []
         num_cadastrado = []
+        indice = []
         text = ""
         print("############### Lendo registros do corpus ###############")
         for i, linha in resp.iterrows():
@@ -94,12 +95,14 @@ def process_corpus(path,column):
                     num_cadastrado.append(int(linha['num_tema_cadastrado']))
                     #print(text_cleaned)
                     docs.append(text_cleaned)
+                    indice.append(i) 
 
             except Exception as erro:
                 print(f"Erro ao capturar numero de tema cadastrado {i} : {erro}")
                 continue
                 
         corpus = pd.DataFrame()
+        corpus["indice"]=indice
         corpus["num_tema_cadastrado"]=num_cadastrado
         corpus[column]=docs 
         
@@ -118,7 +121,7 @@ def process_corpus(path,column):
 def createFileName(name):
     return f'{name}_EMBEDDING_CLEAN.pkl'
 
-def create_embedding(file,corpus,num,model,data_type):
+def create_embedding(file,indice,corpus,num,model,data_type):
     
     sentence_model = SentenceTransformer(model)
     nameEmbedding = createFileName(file.name.split('.')[0])
@@ -137,13 +140,13 @@ def create_embedding(file,corpus,num,model,data_type):
             #verbose
             corpus_embedding = sentence_model.encode(corpus,show_progress_bar=True)
         with open(nameEmbedding, "wb") as fOut:
-                pickle.dump({'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
         print(f"Embedding salvo no arquivo {nameEmbedding}")
     else:
         #verbose
         corpus_embedding = sentence_model.encode(corpus,show_progress_bar=True)
         with open(nameEmbedding, "wb") as fOut:
-                pickle.dump({'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump({'indice':indice,'sentences': corpus,'numTema':num ,'embeddings': corpus_embedding}, fOut,protocol=pickle.HIGHEST_PROTOCOL)
         print(f"Embedding salvo no arquivo {nameEmbedding}")
         
     return nameEmbedding
@@ -162,14 +165,19 @@ def main(args):
     
     #Processa lista de temas 
     corpus_tema = process_corpus(args.themes_file,'tema')
+    #Se não houver uma coluna indice, cria uma
+    if 'indice' not in corpus_recurso.columns:
+        corpus_recurso['indice'] = range(1,len(corpus_recurso)+1)
+    if 'indice' not in corpus_tema.columns:
+        corpus_tema['indice'] = range(1,len(corpus_tema)+1)
     
     #Cria embedding recurso
     conteudo_recurso = corpus_recurso['recurso'].tolist()
-    arquivo_embedding_recurso = create_embedding(args.appeal_file,conteudo_recurso,corpus_recurso['num_tema_cadastrado'],args.model,'recurso')
+    arquivo_embedding_recurso = create_embedding(args.appeal_file,corpus_recurso['indice'],conteudo_recurso,corpus_recurso['num_tema_cadastrado'],args.model,'recurso')
     
     #Cria embedding temas
     conteudo_tema = corpus_tema['tema'].tolist()
-    arquivo_embedding_tema = create_embedding(args.themes_file,conteudo_tema,corpus_tema['num_tema_cadastrado'],args.model,'tema')
+    arquivo_embedding_tema = create_embedding(args.themes_file,corpus_tema['indice'],conteudo_tema,corpus_tema['num_tema_cadastrado'],args.model,'tema')
     
     print("############### Criação do Resumo ###############")
     
