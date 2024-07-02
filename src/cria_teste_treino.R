@@ -7,7 +7,11 @@ dados <- read_csv("REsp_completo.csv")
 total_teste <- round(0.2 * nrow(dados))
 total_treinamento <- nrow(dados) - total_teste
 
-# Definir exclusivos_train e obrigatorios (substitua com suas listas)
+# Definir exclusivos_train e obrigatorios 
+# Classes com apenas 1 registro devem ficar no conjunto de treino
+# Classes com quantidade em ordem de centenas ficam no conjunto de treino
+# Conjunto de treino deve ter pelo menos um exemplar de cada classe
+# Conjunto de teste formado prioritariamente pelas classes com menos registros
 exclusivos_train <- c(182, 214, 225, 247, 250, 280, 353, 408, 425, 432, 439, 473, 480, 529, 546, 556, 668, 684, 700, 702, 709, 732, 861, 863, 874, 948, 1007, 1036, 1039, 1085, 1104, 1123, 1142, 1157, 1176, 1190, 1193, 1197, 1226, 1090, 12, 1178, 7, 1033, 6, 163, 118, 1140, 14, 11, 1067,1081, 3, 1080, 1125, 1046, 20, 72, 1083, 1048, 534, 1002, 769)
 
 obrigatorios <- c(4, 217, 315, 445, 491, 492, 505, 526, 531, 542, 699, 885, 888, 996, 1017, 1049, 1060, 1129, 1137, 1147, 1224, 8, 271, 424, 449,459, 554, 698, 777, 1018, 1023, 1055, 1182, 1184, 32, 483, 1037, 1047, 1095, 1130, 544, 555, 660, 666, 1012, 1162, 372, 412, 504, 589, 692, 740,897, 899, 992, 994, 1042, 1070, 1098, 1115, 571, 1186, 395, 503, 914, 990, 1141, 567, 570, 906, 1013, 1026, 568, 569, 930, 1160, 1102, 359, 1150,973, 995, 1024, 1031, 9, 1093, 895, 1170, 1105, 1088, 1169, 1100, 1064, 1075, 961, 966, 5, 76, 478, 479, 737, 739, 1109, 1086, 1011, 339, 738, 444,661, 1124, 1014, 1076, 1199, 1005, 1174, 962, 1057, 1079, 999, 1164, 694, 1209, 1, 10, 1071, 1056)
