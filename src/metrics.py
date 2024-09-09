@@ -1,120 +1,83 @@
-#pip install rank_eval
-#pip install ranx
-
-
-from rank_eval import Qrels, Run, evaluate, compare
 import pandas as pd
-from pandas import DataFrame
 import csv
 import os
 import argparse
+from rank_eval import Qrels, Run, evaluate
+
+RESULTS_FILE = 'results.csv'
 
 def save_results(file, data):
+    """Saves the results to a CSV file."""
     try:
-        bolFile = os.path.isfile(file)
-
+        file_exists = os.path.isfile(file)
         with open(file, 'a', newline='') as fl:
             csv_writer = csv.writer(fl)
-
-            if not bolFile:
-                csv_writer.writerow(['Origem', 'Recall', 'F1-score', 'MAP', 'NDCG', 'MRR'])
+            if not file_exists:
+                csv_writer.writerow(['Source', 'Recall', 'F1-score', 'MAP', 'NDCG', 'MRR'])
             csv_writer.writerow(data)
     except Exception as e:
-        print(f"Erro ao salvar resultados: {e}")
+        print(f"Error saving results: {e}")
 
+def recall_at_k(k, df):
+    """Calculates recall@k."""
+    relevant_retrieved = df[df['posicao_tema_real'].between(1, k)].shape[0]
+    total_relevant = len(df)
+    return relevant_retrieved / total_relevant if total_relevant > 0 else 0
 
-
-def recallAtK(k,df):
-    Relevant_retrieved = 0
-    Total_relevant = len(df)
-    for indice,linha in df.iterrows():
-        if(0 < linha['posicao_tema_real'] <= k):
-            Relevant_retrieved +=1
-    return Relevant_retrieved/Total_relevant
-
-def f1_score(MAP, recall):
-    f1 = (2*MAP*recall)/(MAP+recall)
-    return f1
+def f1_score(map_score, recall):
+    """Calculates the F1-score."""
+    return (2 * map_score * recall) / (map_score + recall) if (map_score + recall) > 0 else 0
 
 def process_corpus(data_file):
-    results = []
-    results.append(data_file)
+    """Processes the corpus and calculates the metrics."""
+    results = [data_file]
+    
     df = pd.read_csv(data_file)
-    df['indice'] = df['indice'].astype(str)
-    df['sugerido_1'] = df['sugerido_1'].astype(str)
-    df['sugerido_2'] = df['sugerido_2'].astype(str)
-    df['sugerido_3'] = df['sugerido_3'].astype(str)
-    df['sugerido_4'] = df['sugerido_4'].astype(str)
-    df['sugerido_5'] = df['sugerido_5'].astype(str)
-    df['sugerido_6'] = df['sugerido_6'].astype(str)
-    df['num_tema_cadastrado'] = df['num_tema_cadastrado'].astype(str)
-    df['relevancia_tema_cadastrado']=10
+    
+    # Adjust DataFrame
+    df[['indice', 'sugerido_1', 'sugerido_2', 'sugerido_3', 'sugerido_4', 'sugerido_5', 'sugerido_6', 'num_tema_cadastrado']] = df[
+        ['indice', 'sugerido_1', 'sugerido_2', 'sugerido_3', 'sugerido_4', 'sugerido_5', 'sugerido_6', 'num_tema_cadastrado']
+    ].astype(str)
+    df['relevancia_tema_cadastrado'] = 10
 
-    q_id = []
-    doc_id = []
-    score = []
-    for indice, linha in df.iterrows():
-        for i in range(1,7):
-            q_id.append(linha[0])
-            sug = f"sugerido_{i}"
-            doc_id.append(int(linha[sug]))
-            sim = f"similaridade_{i}"
-            score.append(linha[sim])
-
-    ranx_dict ={"q_id": q_id,
-                "doc_id": doc_id,
-                "score" : score
+    # Build ranx_dict
+    ranx_dict = {
+        "q_id": df['indice'].repeat(6).reset_index(drop=True),
+        "doc_id": pd.concat([df[f'sugerido_{i}'] for i in range(1, 7)]).astype(int).reset_index(drop=True),
+        "score": pd.concat([df[f'similaridade_{i}'] for i in range(1, 7)]).astype(float).reset_index(drop=True)
     }
 
+    # Create Qrels and Run
     qrel = Qrels.from_df(df, q_id_col='indice', doc_id_col='num_tema_cadastrado', score_col='relevancia_tema_cadastrado')
+    run_df = pd.DataFrame(ranx_dict)
+    run = Run.from_df(df=run_df, q_id_col="q_id", doc_id_col="doc_id", score_col="score")
 
-    run_df = DataFrame.from_dict(ranx_dict)
-    run_df['q_id'] = run_df['q_id'].astype(str)
-    run_df['doc_id'] = run_df['doc_id'].astype(str)
-    run_df['score'] = run_df['score'].astype(float)
-    run = Run.from_df(
-        df=run_df,
-        q_id_col="q_id",
-        doc_id_col="doc_id",
-        score_col="score"
-    )
-    run.name = "my_run"
+    # Evaluate metrics
+    metrics = evaluate(qrel, run, ["map@6", "ndcg@6", "mrr"])
+    recall = recall_at_k(6, df)
+    f1 = f1_score(metrics['map@6'], recall)
 
+    results.extend([
+        round(recall, 5),
+        round(f1, 5),
+        round(metrics['map@6'], 5),
+        round(metrics['ndcg@6'], 5),
+        round(metrics['mrr'], 5)
+    ])
 
-    dicionario = evaluate(qrel, run, ["map@6","ndcg@6","mrr"])
+    save_results(RESULTS_FILE, results)
+    print(f"Metrics data saved to file: {RESULTS_FILE}")
 
-    run.mean_scores
-    
-    recall = recallAtK(6,df)
-    results.append(recall)
-
-    f1 = f1_score(dicionario['map@6'],recall)
-
-    f1 = round(f1,5)
-    results.append(f1)
-    
-    results.append(dicionario['map@6'])
-    results.append(dicionario['ndcg@6'])
-    results.append(dicionario['mrr'])
-    
-    
-    
-    save_results('results.csv',results)
-    print(f"Dados das métricas salvos em arquivo: results.csv")
-
-
-def main(args):
-    print("############### CÁLCULO DE MÉTRICAS ###############")
-
-    verbose = args.verbose
-    corpus = process_corpus(args.corpus_csv_file)
-    
-
-if __name__=="__main__":
-    
-    parser = argparse.ArgumentParser(description='Generates metrics')
-    parser.add_argument('corpus_csv_file', help='File containing the classfied data')
-    
-    parser.add_argument('-v','--verbose',action='store_true',help='Increase the verbosity level')
+def main():
+    parser = argparse.ArgumentParser(description='Calculates evaluation metrics for classified data.')
+    parser.add_argument('corpus_csv_file', help='Path to the classified data CSV file')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Increase verbosity level')
     args = parser.parse_args()
-    main(args)
+
+    if args.verbose:
+        print("############### METRICS CALCULATION ###############")
+    
+    process_corpus(args.corpus_csv_file)
+
+if __name__ == "__main__":
+    main()
