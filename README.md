@@ -1,31 +1,34 @@
-# r2t
+# GLARE: Guided LexRank for Advanced Retrieval in Legal Analysis
 
-## Exemplos  
+This project implements the **GLARE** methodology, which is a system for classifying Brazilian legal documents, specifically **Recursos Especiais**, using unsupervised machine learning techniques. It combines text summarization and similarity evaluation to match legal documents to predefined themes from the Brazilian Superior Court of Justice (STJ).
 
-criação embedding recursos :    python createEmbedding.py REsp_completo.csv recurso recurso --clean --begin_point cabimento -v
+## Project Overview
 
-criação embedding temas : python createEmbedding.py temas_repetitivos.csv tema tema --clean -v
+The goal of this project is to automate the classification of legal documents based on themes, without the need for labeled training data. The project includes:
 
-criação de tópicos lexrank 10 sentenças : python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 L -v
+- **Text Embedding Generation**: Creation of embeddings for legal documents (Recursos Especiais) and predefined themes.
+- **Text Summarization**: Summarizing legal documents using one of four techniques: LexRank, Guided LexRank, BERTopic, or Guided BERTopic.
+- **Similarity Calculation**: Evaluating the similarity between document summaries and themes using either BM25 (for text) or cosine similarity (for embeddings).
+- **Performance Metrics**: Calculating various metrics to evaluate the accuracy and performance of the classification system.
 
-criação de tópicos lexrank guiada 50 sentenças sem remoção de termos : python createTopics.py REsp_completo_EMBEDDING.pkl 50 X -v --seed_list temas_repetitivos.csv
+## Project Structure
 
-criação de tópicos bertopic guiada 10 tópicos : python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 G -v --seed_list temas_repetitivos.csv
+The project is composed of the following scripts:
 
-criação de tópicos bertopic 10 tópicos: python createTopics.py REsp_completo_EMBEDDING_CLEAN.pkl 10 B -v
+1. **createEmbedding.py**: Generates text embeddings for legal documents and themes using Sentence-BERT.
+2. **createTopics.py**: Summarizes legal documents using one of four summarization methods:
+   - **LexRank**: A graph-based unsupervised summarization algorithm.
+   - **Guided LexRank**: LexRank guided by predefined themes.
+   - **BERTopic**: A topic modeling technique using sentence embeddings.
+   - **Guided BERTopic**: BERTopic guided by predefined themes.
+3. **calcSimilarity.py**: Calculates the similarity between the document summary and the themes.
+   - Uses **BM25** for text-based similarity.
+   - Uses **cosine similarity** for embedding-based similarity.
+4. **metrics.py**: Computes relevant performance metrics (e.g., accuracy, recall, precision) for the classification results.
 
-calculo de similaridade bm25 : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING_CLEAN.pkl 6 B
+## Installation
 
-calculo de similaridade cosseno : python calcSimilarity.py TOPICS_L10CLEAN.pkl temas_repetitivos_EMBEDDING_CLEAN.pkl 6 C
-
-copia arquivo contendo recurso com embeddings alterando chaves do dicionário : python copyFile.py REsp_completo_EMBEDDING_CLEAN.pkl
-cálculo de métricas da classificação feita pelo elasticsearch :python metrics.py CLASSFIED_REsp_Elasticsearch.csv
-
-cálculo de métricas da classificação feita pelo BERTopic com 10 tópicos e similaridade por cosseno: CLASSFIED_TOPICS_B10_COSINE.csv
-
-computação de métricas : python metrics.py CLASSFIED_TOPICS_B10CLEAN_BM25.csv
-
-
-## Arquivos
-
-Embeddings : temas_repetitivos_EMBEDDING_CLEAN.pkl | REsp_completo_EMBEDDING_CLEAN.pkl
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/GLARE-Legal-Documents.git
+   cd GLARE-Legal-Documents
