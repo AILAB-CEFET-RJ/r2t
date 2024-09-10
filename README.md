@@ -41,16 +41,15 @@ The project is composed of the following scripts:
    ```bash
    pip install -r requirements.txt
 
-## Usage
+## Step 1: Generating Embeddings
 
-Step 1: Generating Embeddings
 Use createEmbedding.py to generate embeddings for both legal documents (Recursos Especiais) and themes.
 - For legal documents:
   python createEmbedding.py REsp_completo.csv recurso recurso --clean --begin_point cabimento -v
 - For themes:
   python createEmbedding.py temas_repetitivos.csv tema tema --clean -v
 
-Step 2: Summarizing Documents
+## Step 2: Summarizing Documents
 Once embeddings are generated, you can summarize the documents using createTopics.py with one of the summarization methods.
 python script.py <corpus_embedding> <size> <type> [--verbose] [--seed_list <seed_list>] [<model>]
 
@@ -79,7 +78,7 @@ python script.py <corpus_embedding> <size> <type> [--verbose] [--seed_list <seed
 * Summary generation with Guided LexRank:
   python script.py corpus.pkl 5 X --seed_list seeds.csv
 
-Step 3: Calculating Similarity
+## Step 3: Calculating Similarity
 After summarizing the documents, use calcSimilarity.py to compute the similarity between the document summaries and the themes.
 python calcSimilarity.py <corpus_file> <themes_file> <rank> <type>
 
@@ -110,7 +109,7 @@ Example Output
 * The rank parameter determines the number of items similar to the top to be retrieved and included in the output.
 
 
-Step 4: Evaluating Performance
+## Step 4: Evaluating Performance
 Finally, use metrics.py to calculate metrics and evaluate the system’s performance.
 It computes metrics such as Recall, F1-Score, MAP (Mean Average Precision), NDCG (Normalized Discounted Cumulative Gain), and MRR (Mean Reciprocal Rank) based on the provided classified data.
 
