@@ -1,0 +1,32 @@
+PIPELINE EXECUTION LOG
+============================================================
+
+data\appeals\clean\texto\special_appeal.csv | 166.98 segundos
+data\temas\clean\texto\temas_repetitivos.csv | 1.81 segundos
+data\appeals\notClean\embeddings\embedding_paraphrase_multilingual_mpnet_base_v2_special_appeal.csv | 163.69 segundos
+data\appeals\clean\embeddings\embedding_paraphrase_multilingual_mpnet_base_v2_special_appeal.csv | 149.01 segundos
+data\temas\notClean\embeddings\embedding_paraphrase_multilingual_mpnet_base_v2.csv | 19.41 segundos
+data\temas\clean\embeddings\embedding_paraphrase_multilingual_mpnet_base_v2.csv | 15.84 segundos
+data\appeals\notClean\embeddings\embedding_paraphrase_multilingual_MiniLM_L12_v2_special_appeal.csv | 72.37 segundos
+data\appeals\clean\embeddings\embedding_paraphrase_multilingual_MiniLM_L12_v2_special_appeal.csv | 70.87 segundos
+data\temas\notClean\embeddings\embedding_paraphrase_multilingual_MiniLM_L12_v2.csv | 14.65 segundos
+data\temas\clean\embeddings\embedding_paraphrase_multilingual_MiniLM_L12_v2.csv | 13.88 segundos
+data\appeals\notClean\embeddings\embedding_neuralmind_bert_base_portuguese_cased_special_appeal.csv | 550.29 segundos
+data\appeals\clean\embeddings\embedding_neuralmind_bert_base_portuguese_cased_special_appeal.csv | 573.52 segundos
+data\temas\notClean\embeddings\embedding_neuralmind_bert_base_portuguese_cased.csv | 13.41 segundos
+data\temas\clean\embeddings\embedding_neuralmind_bert_base_portuguese_cased.csv | 12.39 segundos
+data\appeals\notClean\embeddings\embedding_pierreguillou_bert_base_cased_pt_lenerbr_special_appeal.csv | 602.39 segundos
+data\appeals\clean\embeddings\embedding_pierreguillou_bert_base_cased_pt_lenerbr_special_appeal.csv | 595.91 segundos
+data\temas\notClean\embeddings\embedding_pierreguillou_bert_base_cased_pt_lenerbr.csv | 13.63 segundos
+data\temas\clean\embeddings\embedding_pierreguillou_bert_base_cased_pt_lenerbr.csv | 12.38 segundos
+data\appeals\notClean\embeddings\embedding_rufimelo_Legal_BERTimbau_base_special_appeal.csv | 609.25 segundos
+data\appeals\clean\embeddings\embedding_rufimelo_Legal_BERTimbau_base_special_appeal.csv | 621.30 segundos
+data\temas\notClean\embeddings\embedding_rufimelo_Legal_BERTimbau_base.csv | 14.95 segundos
+data\temas\clean\embeddings\embedding_rufimelo_Legal_BERTimbau_base.csv | 12.55 segundos
+data\appeals\notClean\embeddings\embedding_rufimelo_Legal_BERTimbau_large_special_appeal.csv | 1818.99 segundos
+data\appeals\clean\embeddings\embedding_rufimelo_Legal_BERTimbau_large_special_appeal.csv | 2529.34 segundos
+data\temas\notClean\embeddings\embedding_rufimelo_Legal_BERTimbau_large.csv | 27.49 segundos
+data\temas\clean\embeddings\embedding_rufimelo_Legal_BERTimbau_large.csv | 24.40 segundos
+
+============================================================
+Tempo total: 8720.74 segundos

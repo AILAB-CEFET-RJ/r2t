@@ -1,0 +1,7 @@
+PIPELINE EXECUTION LOG
+============================================================
+
+data\appeals\clean\resumos\resumo_lexrank_10.csv | 2849.61 segundos
+
+============================================================
+Tempo total: 2849.62 segundos

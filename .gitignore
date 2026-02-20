@@ -1,0 +1,14 @@
+/data
+/old
+/src/data
+/src2/data
+/src2
+/src3/backup
+/src3/data
+/src3/modelos
+/src3/__pycache__
+/scriptsNovos/modelos
+/scriptsNovos/data
+scriptsNovos/temas_repetitivos.csv
+scriptsNovos/special_appeal.csv
+/scriptsNovos/__pycache__
