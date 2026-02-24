@@ -13,6 +13,7 @@ import os
 PYTHON = "python"
 
 MODELOS = [
+    'distiluse-base-multilingual-cased-v1',
     'paraphrase-multilingual-mpnet-base-v2',
     'paraphrase-multilingual-MiniLM-L12-v2',
     'neuralmind/bert-base-portuguese-cased',
@@ -21,7 +22,7 @@ MODELOS = [
     'rufimelo/Legal-BERTimbau-large',
 ]
 
-RESUMO_ESTRATEGIAS = []#["lexrank"]
+RESUMO_ESTRATEGIAS = ["lexrank"]
 RESUMO_TAMANHOS = [10]
 
 BASE = Path("data")
@@ -49,10 +50,10 @@ def ensure_dir(path: Path):
 
 def executar_se_nao_existir(output_path: Path, cmd: list, registros: list):
     if output_path.exists():
-        print(f"⏭️  Pulando (já existe): {output_path}")
+        print(f"Pulando (já existe): {output_path}")
         return
 
-    print(f"▶ Gerando: {output_path}")
+    print(f"Gerando: {output_path}")
     inicio = time.time()
 
     run(cmd)
@@ -121,7 +122,7 @@ def gerar_embeddings_textos(registros):
 
             nome_csv = input_path.stem
 
-            # Regra do gerarEmbedding.py
+            # padrao do gerarEmbedding.py
             if "appeal" in nome_csv:
                 sufixo_modelo = "_treinado" if os.path.isdir(f"modelos/{modelo_sanit}") else ""
                 output_name = f"embedding_{modelo_sanit}{sufixo_modelo}__{nome_csv}.csv"
@@ -170,7 +171,8 @@ def gerar_resumos(registros):
                     "--input", str(input_path),
                     "--output_dir", str(resumo_dir),
                     "--size", str(tamanho),
-                    "--strategy", estrategia
+                    "--strategy", estrategia,
+                    "--model", "distiluse-base-multilingual-cased-v1"
                 ],
                 registros
             )
@@ -218,7 +220,7 @@ def main():
     registros = []
 
     gerar_clean(registros)
-    gerar_embeddings_textos(registros)
+    #gerar_embeddings_textos(registros)
     gerar_resumos(registros)
     gerar_embeddings_resumos(registros)
 

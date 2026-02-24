@@ -11,8 +11,6 @@ from rank_bm25 import BM25Okapi
 # =====================================================
 # CONFIGURAÇÕES
 # =====================================================
-
-MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 LEXRANK_THRESHOLD = 0.3
 
 # Pesos Guided LexRank
@@ -124,6 +122,13 @@ def main():
         help="Estratégia de resumo"
     )
 
+    parser.add_argument(
+        "--model",
+        default = 'distiluse-base-multilingual-cased-v1',
+        required=False,
+        help="modelo para o lex rank"
+    )
+
     args = parser.parse_args()
 
     # -------------------------------------------------
@@ -154,6 +159,7 @@ def main():
     # -------------------------------------------------
     # Modelo
     # -------------------------------------------------
+    MODEL_NAME = args.model
     model = SentenceTransformer(MODEL_NAME)
 
     # -------------------------------------------------

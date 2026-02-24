@@ -13,7 +13,7 @@ import itertools
 BASE = Path("data")
 K = 6
 
-RESULTADOS_CSV = "resultados_avaliacao.csv"
+RESULTADOS_CSV = "resultados_avaliacao_distiluse-base-multilingual-cased-v1.csv"
 
 # =====================================================
 # MÉTRICAS (EXATAMENTE COMO TEMPLATE)
@@ -130,7 +130,7 @@ def avaliar_cosine():
 
     for clean_flag in ["clean", "notClean"]:
 
-        print(f"\n🔎 Avaliando {clean_flag}")
+        print(f"\nAvaliando {clean_flag}")
 
         appeals_embed_dir = BASE / "appeals" / clean_flag / "embeddings"
         temas_embed_dir   = BASE / "temas"   / clean_flag / "embeddings"
@@ -143,14 +143,14 @@ def avaliar_cosine():
         for tema_file in temas_embed_dir.glob("embedding_*.csv"):
 
             if "__" not in tema_file.name:
-                print(f"⚠️ Formato inválido (tema): {tema_file.name}")
+                print(f"Formato inválido (tema): {tema_file.name}")
                 continue
 
             modelo = tema_file.name.split("__")[0]  # ex: embedding_modelo
             temas_por_modelo[modelo] = tema_file
 
         if not temas_por_modelo:
-            print("⚠️ Nenhum tema indexado.")
+            print("Nenhum tema indexado.")
             continue
 
         # =============================
@@ -161,7 +161,7 @@ def avaliar_cosine():
         for appeal_file in appeals_embed_dir.glob("embedding_*.csv"):
 
             if "__" not in appeal_file.name:
-                print(f"⚠️ Formato inválido (appeal): {appeal_file.name}")
+                print(f"Formato inválido (appeal): {appeal_file.name}")
                 continue
 
             modelo = appeal_file.name.split("__")[0]
@@ -172,13 +172,13 @@ def avaliar_cosine():
             encontrou_algum = True
             tema_file = temas_por_modelo[modelo]
 
-            print(f"✔ Comparando:\n   {appeal_file.name}\n   {tema_file.name}")
+            print(f"Comparando:\n   {appeal_file.name}\n   {tema_file.name}")
 
             tema_ids, tema_embeddings = carregar_embeddings(tema_file)
             appeal_ids, appeal_embeddings = carregar_embeddings(appeal_file)
 
             if appeal_embeddings.shape[1] != tema_embeddings.shape[1]:
-                print(f"⚠️ Dimensão incompatível: {appeal_file.name}")
+                print(f"Dimensão incompatível: {appeal_file.name}")
                 continue
 
             similaridades = cosine_similarity(
@@ -202,7 +202,7 @@ def avaliar_cosine():
             })
 
         if not encontrou_algum:
-            print("⚠️ Nenhum par compatível encontrado.")
+            print("Nenhum par compatível encontrado.")
 
     return resultados
 
@@ -263,10 +263,10 @@ def avaliar_bm25():
 
 def main():
 
-    print("🔎 Avaliando COS...")
+    print("Avaliando COS...")
     resultados_cos = avaliar_cosine()
 
-    print("🔎 Avaliando BM25...")
+    print("Avaliando BM25...")
     #resultados_bm25 = avaliar_bm25()
 
     resultados_totais = resultados_cos #+ resultados_bm25
@@ -274,7 +274,7 @@ def main():
     df_resultados = pd.DataFrame(resultados_totais)
     df_resultados.to_csv(RESULTADOS_CSV, index=False)
 
-    print("\n✅ Avaliação concluída.")
+    print("\nAvaliação concluída.")
     print(f"Resultados salvos em: {RESULTADOS_CSV}")
 
 if __name__ == "__main__":
