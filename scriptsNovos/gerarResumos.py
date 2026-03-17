@@ -214,7 +214,7 @@ def main():
     df_out = pd.DataFrame(resultados)
     df_out.to_csv(output_csv, index=False)
 
-    print(f"\n✅ Resumos salvos em: {output_csv}")
+    print(f"\nResumos salvos em: {output_csv}")
 
 # =====================================================
 # ENTRY POINT

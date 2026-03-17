@@ -26,11 +26,11 @@ def carregar_modelo(model_name: str, device: str):
     caminho_modelo_local = os.path.join("modelos", nome_sanit)
 
     if os.path.isdir(caminho_modelo_local):
-        print(f"📦 Modelo treinado encontrado em: {caminho_modelo_local}")
+        print(f"Modelo treinado encontrado em: {caminho_modelo_local}")
         model = SentenceTransformer(caminho_modelo_local, device=device)
         return model, "_treinado"
     else:
-        print("🌐 Modelo treinado não encontrado. Carregando modelo base.")
+        print("Modelo treinado não encontrado. Carregando modelo base.")
         model = SentenceTransformer(model_name, device=device)
         return model, ""
 
@@ -105,12 +105,12 @@ def main():
     output_path = os.path.join(args.output_dir, output_name)
 
     print("=" * 80)
-    print("🚀 GERANDO EMBEDDINGS")
+    print("GERANDO EMBEDDINGS")
     print("=" * 80)
-    print(f"📄 Arquivo: {args.input}")
-    print(f"🧠 Modelo:  {args.model}")
-    print(f"📝 Coluna:  {text_col}")
-    print(f"💾 Saída:   {output_path}")
+    print(f"Arquivo: {args.input}")
+    print(f"Modelo:  {args.model}")
+    print(f"Coluna:  {text_col}")
+    print(f"Saída:   {output_path}")
     print("=" * 80)
 
 
@@ -139,9 +139,9 @@ def main():
     # -------------------------------------------------
     df_out.to_csv(output_path, index=False)
 
-    print(f"\n✅ Embeddings salvos em: {output_path}")
-    print(f"📊 Total de vetores: {len(df_out)}")
-    print(f"📐 Dimensão: {embeddings.shape[1]}")
+    print(f"\nEmbeddings salvos em: {output_path}")
+    print(f"Total de vetores: {len(df_out)}")
+    print(f"Dimensão: {embeddings.shape[1]}")
 
     # Limpeza GPU
     del model
