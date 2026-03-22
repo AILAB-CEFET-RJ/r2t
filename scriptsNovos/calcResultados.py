@@ -5,6 +5,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
 import string
 import itertools
+import time
+import glob
+import os
 
 # =====================================================
 # CONFIGURAÇÕES
@@ -13,7 +16,19 @@ import itertools
 BASE = Path("data")
 K = 6
 
-RESULTADOS_CSV = "resultados_avaliacao_distiluse-base-multilingual-cased-v1.csv"
+RESULTADOS_CSV = "resultados/resultados_avaliacao_distiluse-base-multilingual-cased-v1.csv"
+
+def carregar_tempos_pipeline():
+    arquivos = glob.glob("logs/pipeline_times_*.csv")
+    if not arquivos:
+        print("Nenhum CSV de tempos encontrado.")
+        return {}
+
+    arquivo_mais_recente = max(arquivos, key=os.path.getctime)
+    print(f"Usando CSV de tempos: {arquivo_mais_recente}")
+
+    df = pd.read_csv(arquivo_mais_recente)
+    return dict(zip(df["arquivo"], df["tempo_total_segundos"]))
 
 # =====================================================
 # MÉTRICAS (EXATAMENTE COMO TEMPLATE)
@@ -124,7 +139,7 @@ def construir_labels(df_recursos, df_temas):
 # PASSO 1 — COSINE COM EMBEDDINGS
 # =====================================================
 
-def avaliar_cosine():
+def avaliar_cosine(tempos_pipeline):
 
     resultados = []
 
@@ -181,10 +196,15 @@ def avaliar_cosine():
                 print(f"Dimensão incompatível: {appeal_file.name}")
                 continue
 
+            inicio_sim = time.time()
+
             similaridades = cosine_similarity(
                 appeal_embeddings,
                 tema_embeddings
             )
+
+            fim_sim = time.time()
+            tempo_sim = fim_sim - inicio_sim
 
             df_recursos = pd.DataFrame({"theme_id": appeal_ids})
             df_temas    = pd.DataFrame({"theme_id": tema_ids})
@@ -192,13 +212,26 @@ def avaliar_cosine():
 
             metricas = calcular_metricas(similaridades, labels, k=K)
 
+            path_appeal_full = str(appeal_file)
+            path_tema_full   = str(tema_file)
+
+            tempo_pipeline_total = (
+                tempos_pipeline.get(path_appeal_full, 0) +
+                tempos_pipeline.get(path_tema_full, 0)
+            )
+
+            tempo_total = tempo_pipeline_total + tempo_sim
+
             resultados.append({
                 "similaridade": "COS",
                 "clean_flag": clean_flag,
                 "modelo": modelo.replace("embedding_", ""),
                 "arquivo_temas": tema_file.name,
                 "arquivo_appeals": appeal_file.name,
-                **metricas
+                **metricas,
+                "tempo_pipeline": tempo_pipeline_total,
+                "tempo_similaridade": tempo_sim,
+                "tempo_total": tempo_total
             })
 
         if not encontrou_algum:
@@ -210,7 +243,7 @@ def avaliar_cosine():
 # PASSO 2 — BM25
 # =====================================================
 
-def avaliar_bm25():
+def avaliar_bm25(tempos_pipeline):
 
     resultados = []
 
@@ -222,7 +255,7 @@ def avaliar_bm25():
         temas_textos = df_temas["theme_text"].tolist()
 
         # Texto original
-        appeals_texto_path = BASE / "appeals" / clean_flag / "texto" / "special_appeal.csv"
+        appeals_texto_path = BASE / "appeals" / clean_flag / "texto" / "special_appeal_teste.csv"
         df_recursos_texto = pd.read_csv(appeals_texto_path)
 
         # Resumos
@@ -238,21 +271,39 @@ def avaliar_bm25():
 
             textos_appeals = df_recursos.iloc[:, 1].tolist()
 
+            inicio_sim = time.time()
+
             similaridades = calcular_similaridade_bm25(
                 textos_appeals,
                 temas_textos
             )
 
+            fim_sim = time.time()
+            tempo_sim = fim_sim - inicio_sim
+
             labels = construir_labels(df_recursos, df_temas)
 
             metricas = calcular_metricas(similaridades, labels, k=K)
+
+            path_appeal_full = str(path_appeal)
+            path_tema_full   = str(temas_texto_path)
+            
+            tempo_pipeline_total = (
+                tempos_pipeline.get(path_appeal_full, 0) +
+                tempos_pipeline.get(path_tema_full, 0)
+            )
+            
+            tempo_total = tempo_pipeline_total + tempo_sim
 
             resultados.append({
                 "similaridade": "BM25",
                 "clean_flag": clean_flag,
                 "arquivo_temas": temas_texto_path.name,
                 "arquivo_appeals": path_appeal.name,
-                **metricas
+                **metricas,
+                "tempo_pipeline": tempo_pipeline_total,
+                "tempo_similaridade": tempo_sim,
+                "tempo_total": tempo_total,
             })
 
     return resultados
@@ -263,13 +314,15 @@ def avaliar_bm25():
 
 def main():
 
+    tempos_pipeline = carregar_tempos_pipeline()
+
     print("Avaliando COS...")
-    resultados_cos = avaliar_cosine()
+    resultados_cos = avaliar_cosine(tempos_pipeline)
 
     print("Avaliando BM25...")
-    #resultados_bm25 = avaliar_bm25()
+    resultados_bm25 = avaliar_bm25(tempos_pipeline)
 
-    resultados_totais = resultados_cos #+ resultados_bm25
+    resultados_totais = resultados_cos + resultados_bm25
 
     df_resultados = pd.DataFrame(resultados_totais)
     df_resultados.to_csv(RESULTADOS_CSV, index=False)

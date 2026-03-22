@@ -113,9 +113,9 @@ def main():
 
     df_out.to_csv(args.output, index=False)
 
-    print(f"\n✅ Arquivo limpo salvo em: {args.output}")
-    print(f"📄 Coluna processada: {args.text_column}")
-    print(f"📊 Total de registros: {len(df_out)}")
+    print(f"\nArquivo limpo salvo em: {args.output}")
+    print(f"Coluna processada: {args.text_column}")
+    print(f"Total de registros: {len(df_out)}")
 
 # ========= ENTRY POINT ========= #
 

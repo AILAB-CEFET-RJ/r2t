@@ -30,7 +30,6 @@ print("Estrutura de diretórios criada com sucesso!")
 
 # =========================
 # Caminhos dos arquivos origem
-# (ajuste se necessário)
 # =========================
 arquivo_special = "special_appeal.csv"
 arquivo_temas = "temas_repetitivos.csv"

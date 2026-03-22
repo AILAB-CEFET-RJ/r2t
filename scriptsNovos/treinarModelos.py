@@ -9,8 +9,10 @@ import torch
 # CONFIGURAÇÕES
 # ===============================
 
+# TEMAS_CSV = "data/temas/notClean/texto/temas_repetitivos.csv"
+# APPEALS_CSV = "data/appeals/notClean/texto/special_appeal.csv"
 TEMAS_CSV = "data/temas/notClean/texto/temas_repetitivos.csv"
-APPEALS_CSV = "data/appeals/notClean/texto/special_appeal.csv"
+APPEALS_CSV = "special_appeal_treino.csv"
 OUTPUT_DIR = "modelos"
 BATCH_SIZE = 2
 EPOCHS = 2
