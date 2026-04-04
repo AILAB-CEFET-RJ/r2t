@@ -99,13 +99,13 @@ class BM25Strategy(SimilarityStrategy):
             data = pickle.load(f)
             corpus_data['index'] = data['index']
             corpus_data['topics'] = data['topics']
-            corpus_data['theme_number'] = data['theme_number']
+            corpus_data['numTheme'] = data['numTheme']
         
         with open(themes, "rb") as f:
             data = pickle.load(f)
             themes_data['index'] = data['index']
             themes_data['sentences'] = data['sentences']
-            themes_data['theme_number'] = data['theme_number']
+            themes_data['numTheme'] = data['numTheme']
 
         print("Calculating similarity using BM25")
 
@@ -121,14 +121,14 @@ class BM25Strategy(SimilarityStrategy):
             sys.stdout.flush()
             print(" ", end='\r')
             doc_scores = self.calculate_bm25_scores(row['topics'])
-            classified_themes = themes_data[['theme_number']].copy()
+            classified_themes = themes_data[['numTheme']].copy()
             classified_themes['similarity'] = doc_scores
-            classified_themes.columns = ['theme_number', 'similarity']
+            classified_themes.columns = ['numTheme', 'similarity']
             sorted_themes = list(classified_themes.itertuples(index=False, name=None))
-            data_to_write = [idx, int(row['theme_number'])]
+            data_to_write = [idx, int(row['numTheme'])]
 
             try:
-                ranking, real_theme_info = create_bm25_similarity_list(sorted_themes, rank, row['theme_number'])
+                ranking, real_theme_info = create_bm25_similarity_list(sorted_themes, rank, row['numTheme'])
             except Exception as e:
                 print(f"Error calculating similarity index {idx}")
                 continue
@@ -156,15 +156,15 @@ class CosineSimilarityStrategy(SimilarityStrategy):
             data = pickle.load(f)
             corpus_data['index'] = data['index']
             corpus_data['topics'] = data['topics']
-            corpus_data['topics_embeddings'] = data['topics_embeddings'].tolist()
-            corpus_data['theme_number'] = data['theme_number']
+            corpus_data['topicEmbeddings'] = data['topicEmbeddings'].tolist()
+            corpus_data['numTheme'] = data['numTheme']
 
         with open(themes, "rb") as f:
             data = pickle.load(f)
             themes_data['index'] = data['index']
             themes_data['sentences'] = data['sentences']
             themes_data['embeddings'] = data['embeddings'].tolist()
-            themes_data['theme_number'] = data['theme_number']
+            themes_data['numTheme'] = data['numTheme']
 
         print("Calculating similarity using Cosine")
 
@@ -175,14 +175,14 @@ class CosineSimilarityStrategy(SimilarityStrategy):
             sys.stdout.write(f' Progress: {idx/len(corpus_data)*100:.2f}%')
             sys.stdout.flush()
             print(" ", end='\r')
-            data_to_write = [idx, int(row['theme_number'])]
+            data_to_write = [idx, int(row['numTheme'])]
 
             ranking, real_theme_info = calculate_cosine_similarity(
-                row['topics_embeddings'],
+                row['topicEmbeddings'],
                 themes_data['embeddings'],
-                themes_data['theme_number'],
+                themes_data['numTheme'],
                 rank,
-                row['theme_number']
+                row['numTheme']
             )
 
             for item in ranking:

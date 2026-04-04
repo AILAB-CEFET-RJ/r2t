@@ -119,7 +119,7 @@ class LexrankStrategy(Strategy):
 
             # Compute sentence embeddings
             embeddings = model.encode(sentences, convert_to_tensor=True)
-            cos_scores = util.cos_sim(embeddings, embeddings).numpy()
+            cos_scores = util.cos_sim(embeddings, embeddings).cpu().numpy()
 
             # Compute centrality for each sentence
             centrality_scores = degree_centrality_scores(cos_scores, threshold=0.3)
@@ -169,7 +169,7 @@ class GuidedLexrankStrategy(Strategy):
 
             # Compute sentence embeddings
             embeddings = model.encode(sentences, convert_to_tensor=True)
-            cos_scores = util.cos_sim(embeddings, embeddings).numpy()
+            cos_scores = util.cos_sim(embeddings, embeddings).cpu().numpy()
             centrality_scores = degree_centrality_scores(cos_scores, threshold=0.05)
 
             # BM25 score calculation

@@ -20,7 +20,7 @@ def save_results(file, data):
 
 def recall_at_k(k, df):
     """Calculates recall@k."""
-    relevant_retrieved = df[df['posicao_tema_real'].between(1, k)].shape[0]
+    relevant_retrieved = df[df['posicao_tema_real'].astype(int).between(1, k)].shape[0]
     total_relevant = len(df)
     return relevant_retrieved / total_relevant if total_relevant > 0 else 0
 
@@ -35,15 +35,15 @@ def process_corpus(data_file):
     df = pd.read_csv(data_file)
     
     # Adjust DataFrame
-    df[['indice', 'sugerido_1', 'sugerido_2', 'sugerido_3', 'sugerido_4', 'sugerido_5', 'sugerido_6', 'num_tema_cadastrado']] = df[
-        ['indice', 'sugerido_1', 'sugerido_2', 'sugerido_3', 'sugerido_4', 'sugerido_5', 'sugerido_6', 'num_tema_cadastrado']
+    df[['indice', 'sugerido_1', 'sugerido_2', 'sugerido_3', 'sugerido_4', 'sugerido_5', 'sugerido_6', 'num_tema_cadastrado', "similaridade_1", "similaridade_2", "similaridade_3", "similaridade_4", "similaridade_5", "similaridade_6", "posicao_tema_real"]] = df[
+    ['index', 'suggested_1', 'suggested_2', 'suggested_3', 'suggested_4', 'suggested_5', 'suggested_6', 'registered_theme_number', "similarity_1", "similarity_2", "similarity_3", "similarity_4", "similarity_5", "similarity_6", "real_theme_position"]
     ].astype(str)
     df['relevancia_tema_cadastrado'] = 10
 
     # Build ranx_dict
     ranx_dict = {
         "q_id": df['indice'].repeat(6).reset_index(drop=True),
-        "doc_id": pd.concat([df[f'sugerido_{i}'] for i in range(1, 7)]).astype(int).reset_index(drop=True),
+        "doc_id": pd.concat([df[f'sugerido_{i}'] for i in range(1, 7)]).astype(str).reset_index(drop=True),
         "score": pd.concat([df[f'similaridade_{i}'] for i in range(1, 7)]).astype(float).reset_index(drop=True)
     }
 

@@ -61,7 +61,7 @@ def clean_text(doc):
 
 def process_corpus(file_path, clean, begin_point, column):
     try:
-        data = pd.read_csv(file_path)
+        data = pd.read_csv(file_path, encoding='latin1')
         size = len(data)
         docs, registered_ids, indices = [], [], []
         print("############### Reading corpus records ###############")
@@ -77,7 +77,7 @@ def process_corpus(file_path, clean, begin_point, column):
                     if clean:
                         text = clean_text(text)
                     
-                    registered_ids.append(int(row['num_tema_cadastrado']))
+                    registered_ids.append(int(row['theme_id']))
                     docs.append(text)
                     indices.append(i)
             except Exception as error:
@@ -86,7 +86,7 @@ def process_corpus(file_path, clean, begin_point, column):
                 
         corpus_df = pd.DataFrame()
         corpus_df["index"] = indices
-        corpus_df["num_tema_cadastrado"] = registered_ids
+        corpus_df["theme_id"] = registered_ids
         corpus_df[column] = docs
         return corpus_df
         
@@ -110,7 +110,7 @@ def generate_embeddings(file, index, corpus, labels, model_name, verbose, clean,
         corpus_embeddings = sentence_model.encode(corpus, show_progress_bar=False)
 
     with open(embedding_file, "wb") as fOut:
-        pickle.dump({'index': index, 'sentences': corpus, 'numTema': labels, 'embeddings': corpus_embeddings}, fOut, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump({'index': index, 'sentences': corpus, 'numTheme': labels, 'embeddings': corpus_embeddings}, fOut, protocol=pickle.HIGHEST_PROTOCOL)
     
     print(f"Embeddings saved to {embedding_file}")
 
@@ -130,7 +130,7 @@ def main(args):
     
     if corpus is not None:
         content = corpus[args.column].tolist()
-        generate_embeddings(args.corpus_csv_file, corpus['index'], content, corpus['num_tema_cadastrado'], args.model, args.verbose, args.clean, args.data_type)
+        generate_embeddings(args.corpus_csv_file, corpus['index'], content, corpus['theme_id'], args.model, args.verbose, args.clean, args.data_type)
         
         total_time = time.time() - start_time
         minutes, seconds = divmod(int(total_time), 60)
@@ -144,7 +144,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate text embeddings using Sentence-BERT')
-    parser.add_argument('corpus_csv_file', type=argparse.FileType('r'), help='File containing the corpus')
+    parser.add_argument('corpus_csv_file', type=argparse.FileType('r', encoding='latin1'), help='File containing the corpus')
     parser.add_argument('data_type', choices=['recurso', 'tema'], help='Indicates whether the data type is "recurso" or "tema"')
     parser.add_argument('column', help='Column with text to be converted into embeddings')
     parser.add_argument('model', default='distiluse-base-multilingual-cased-v1', nargs='?', help='Sentence-BERT model used for embedding generation')
