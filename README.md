@@ -51,7 +51,7 @@ Use createEmbedding.py to generate embeddings for both legal documents (Recursos
 
 ## Step 2: Summarizing Documents
 Once embeddings are generated, you can summarize the documents using createTopics.py with one of the summarization methods.
-python script.py <corpus_embedding> <size> <type> [--verbose] [--seed_list <seed_list>] [<model>]
+python createTopics.py <corpus_embedding> <size> <type> [--verbose] [--seed_list <seed_list>] [<model>]
 
 ### Parameters 
 * corpus_embedding: Path to the corpus embeddings file (.pkl file).
@@ -67,16 +67,16 @@ python script.py <corpus_embedding> <size> <type> [--verbose] [--seed_list <seed
 
 ### Examples
 * Topic generation with BERTopic:
-  python script.py corpus.pkl 10 B
+  python createTopics.py corpus.pkl 10 B
 
 * Topic generation with Guided BERTopic:
-  python script.py corpus.pkl 10 G --seed_list seeds.csv
+  python createTopics.py corpus.pkl 10 G --seed_list seeds.csv
 
 * Summary generation with LexRank:
-  python script.py corpus.pkl 5 L
+  python createTopics.py corpus.pkl 5 L
 
 * Summary generation with Guided LexRank:
-  python script.py corpus.pkl 5 X --seed_list seeds.csv
+  python createTopics.py corpus.pkl 5 X --seed_list seeds.csv
 
 ## Step 3: Calculating Similarity
 After summarizing the documents, use calcSimilarity.py to compute the similarity between the document summaries and the themes.
