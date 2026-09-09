@@ -44,20 +44,6 @@ RESUMO_ESTRATEGIA_VALORES = ["guided_lexrank"]   # ["lexrank", "guided_lexrank"]
 METODO_SIMILARIDADE_VALORES = ["COS"]
 
 MODELO_VALORES = [
-    "distiluseMultilingual",
-    "paraphraseMpnet",
-    "paraphraseMiniLm",
-    "bertimbauBase",
-    "bertLenerBr",
-    "legalBertimbauBase",
-    "legalBertimbauLarge",
-    "bertimbauLarge",
-    "distiluseMultilingual_treinado",
-    "paraphraseMpnet_treinado",
-    "paraphraseMiniLm_treinado",
-    "bertimbauBase_treinado",
-    "bertLenerBr_treinado",
-    "legalBertimbauBase_treinado",
     "legalBertimbauLarge_treinado",
     "bertimbauLarge_treinado",
 ]
@@ -72,10 +58,6 @@ MODELO_VALORES = [
 TREINO_VARIANTE_VALORES = [
     "raw",
     "clean",
-    # "resumo_lexrank",
-    # "resumo_guided_lexrank",
-    # "clean_resumo_lexrank",
-    # "clean_resumo_guided_lexrank",
 ]
 
 K_VALORES = [6]
