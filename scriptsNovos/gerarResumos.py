@@ -531,7 +531,7 @@ def main():
     # Salvar CSV
     # -------------------------------------------------
     df_out = pd.DataFrame(resultados)
-    df_out.to_csv(output_csv, index=False)
+    df_out.to_csv(output_csv, index=False, encoding="latin1")
 
     print(f"\nResumos salvos em: {output_csv}")
 

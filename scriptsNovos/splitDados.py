@@ -55,6 +55,14 @@ TEST_SIZE = 0.2
 TRAIN_DIR = "split/treino"
 TEST_DIR = "split/teste"
 
+# Mapas appeal_id -> posição original no special_appeal.csv completo, um
+# por metade do split (treino/teste), mesma ordem das linhas do CSV do
+# split correspondente. Usado por prepararTreinoVariantes.py para
+# reaproveitar resumos já calculados para o CORPUS COMPLETO em vez de
+# recalcular por seed/kind (ver garantir_resumo_completo lá).
+IDS_TRAIN_DIR = "split/ids/treino"
+IDS_TEST_DIR = "split/ids/teste"
+
 
 # =====================================================
 # FUNÇÕES
@@ -94,6 +102,8 @@ def load_data(filepath):
 def create_folders():
     os.makedirs(TRAIN_DIR, exist_ok=True)
     os.makedirs(TEST_DIR, exist_ok=True)
+    os.makedirs(IDS_TRAIN_DIR, exist_ok=True)
+    os.makedirs(IDS_TEST_DIR, exist_ok=True)
 
 
 def split_ja_existe(name: str) -> bool:
@@ -104,6 +114,74 @@ def split_ja_existe(name: str) -> bool:
     consome).
     """
     return os.path.isfile(os.path.join(TRAIN_DIR, f"{name}.csv"))
+
+
+def ids_existem(name: str) -> bool:
+    """True se os mapas appeal_id de treino E de teste já existem para 'name'."""
+    return (
+        os.path.isfile(os.path.join(IDS_TRAIN_DIR, f"{name}.csv"))
+        and os.path.isfile(os.path.join(IDS_TEST_DIR, f"{name}.csv"))
+    )
+
+
+def localizar_teste_split(name: str):
+    """
+    Localiza o CSV de TESTE de um split específico em um dos dois lugares
+    possíveis -- mesmo raciocínio de localizar_appeals_file(), mas para o
+    arquivo de teste de UM split:
+
+      1) split/teste/<name>.csv -- ainda não foi consumido por
+         criarDiretorios.py.
+      2) data/appeals/notClean/texto/<name>.csv -- local para onde
+         criarDiretorios.py MOVE o arquivo de teste depois de rodar.
+
+    Retorna None se não achar em nenhum dos dois (não deveria acontecer
+    em uso normal, mas quem chama deve tratar esse caso).
+    """
+    candidatos = [
+        os.path.join(TEST_DIR, f"{name}.csv"),
+        os.path.join("data", "appeals", "notClean", "texto", f"{name}.csv"),
+    ]
+    for candidato in candidatos:
+        if os.path.isfile(candidato):
+            return candidato
+    return None
+
+
+def salvar_mapa_ids(df, path: str) -> None:
+    """
+    Salva um CSV de uma coluna só (appeal_id), na mesma ordem das linhas
+    de df -- df.index já é a posição original da linha no
+    special_appeal.csv completo (nenhuma das funções de split abaixo
+    reseta o índice; ver docstrings de cada uma).
+    """
+    mapa = pd.DataFrame({"appeal_id": df.index})
+    salvar_csv_atomico(mapa, path, index=False)
+
+
+def verificar_split_bate(df_recomputado, caminho_csv: str, name: str, lado: str) -> None:
+    """
+    Confere que um split recomputado em memória (mesma função + mesma
+    seed) bate, linha a linha, com o CSV já persistido em disco --
+    condição necessária para confiar no df_recomputado.index como fonte
+    do mapa de appeal_id quando o CSV já existia de uma execução anterior
+    e só o mapa está faltando.
+
+    Levanta erro (em vez de seguir silenciosamente) se não bater --
+    isso indicaria, por exemplo, mudança de versão de pandas/sklearn/numpy
+    entre a execução original e agora.
+    """
+    persistido = pd.read_csv(caminho_csv)
+    recomputado = df_recomputado[[LABEL_COLUMN, TEXT_COLUMN]].reset_index(drop=True)
+    persistido_chk = persistido[[LABEL_COLUMN, TEXT_COLUMN]].reset_index(drop=True)
+
+    if len(recomputado) != len(persistido_chk) or not recomputado.equals(persistido_chk):
+        raise RuntimeError(
+            f"[{name}] O {lado} recomputado em memória (mesma seed) NÃO bate com "
+            f"o CSV já salvo em {caminho_csv}. Abortando em vez de gravar um mapa "
+            f"de appeal_id incorreto -- possível mudança de versão de "
+            f"pandas/sklearn/numpy entre a execução original e agora."
+        )
 
 
 # -----------------------------------------------------
@@ -288,6 +366,54 @@ def save_split(train_df, test_df, name):
     print(f"  - {test_file}")
 
 
+def processar_split(name: str, gerar_func) -> None:
+    """
+    Garante que um split (CSV de treino/teste) e os mapas de appeal_id
+    correspondentes existam, cobrindo os 3 estados possíveis:
+
+      1) Nada existe          -> gera tudo (split + os dois mapas).
+      2) Split existe,        -> NÃO regrava o CSV do split (preserva
+         mapa não existe         exatamente a partição já usada em
+                                  resultados anteriores); recomputa em
+                                  memória só para validar (ver
+                                  verificar_split_bate) e então extrai o
+                                  índice para os mapas.
+      3) Tudo já existe       -> [CACHE], não faz nada.
+
+    gerar_func: () -> (train_df, test_df), determinístico (mesma seed).
+    """
+    csv_pronto = split_ja_existe(name)
+    ids_prontos = ids_existem(name)
+
+    if csv_pronto and ids_prontos:
+        print(f"[CACHE] {name}: split + mapas de appeal_id já existem -- pulando.")
+        return
+
+    train_df, test_df = gerar_func()
+
+    if not csv_pronto:
+        save_split(train_df, test_df, name)
+    else:
+        print(f"[VALIDANDO] {name}: CSV já existia -- conferindo antes de gerar os mapas de id.")
+        train_csv = os.path.join(TRAIN_DIR, f"{name}.csv")
+        verificar_split_bate(train_df, train_csv, name, "treino")
+
+        teste_csv = localizar_teste_split(name)
+        if teste_csv is not None:
+            verificar_split_bate(test_df, teste_csv, name, "teste")
+        else:
+            print(
+                f"[AVISO] {name}: não encontrei o CSV de teste (nem em {TEST_DIR}, "
+                f"nem em data/appeals/notClean/texto/) para validar -- "
+                f"confiando só na validação do lado do treino."
+            )
+
+    if not ids_prontos:
+        salvar_mapa_ids(train_df, os.path.join(IDS_TRAIN_DIR, f"{name}.csv"))
+        salvar_mapa_ids(test_df, os.path.join(IDS_TEST_DIR, f"{name}.csv"))
+        print(f"[OK] {name}: mapas de appeal_id gerados em {IDS_TRAIN_DIR}/ e {IDS_TEST_DIR}/.")
+
+
 # =====================================================
 # MAIN
 # =====================================================
@@ -305,57 +431,50 @@ def main(argv=None):
 
     create_folders()
 
-    # Só carrega o corpus (e só procura o arquivo) se houver de fato algo
-    # pendente para gerar -- evita exigir o corpus presente quando tudo já
-    # foi processado numa execução anterior (ex: rodar de novo sem seeds
-    # novas, só para reprocessar variantes de treino).
-    pendentes_baseline = [s for s in seeds if not split_ja_existe(f"special_appeal_baseline_{s}")]
-    pendentes_stratified = [s for s in seeds if not split_ja_existe(f"special_appeal_stratified_{s}")]
-    pendentes_minority = [s for s in seeds if not split_ja_existe(f"special_appeal_minority_{s}")]
-    zeroshot_pendente = not split_ja_existe("special_appeal_zeroshot")
+    # Lista de tarefas: (nome, função geradora). A função geradora só é
+    # CHAMADA (e só então precisa do corpus em memória) se a tarefa
+    # estiver pendente -- ver o filtro logo abaixo.
+    tarefas = []
+    for seed in seeds:
+        tarefas.append((f"special_appeal_baseline_{seed}", "baseline", seed))
+        tarefas.append((f"special_appeal_stratified_{seed}", "stratified", seed))
+        tarefas.append((f"special_appeal_minority_{seed}", "minority", seed))
+    tarefas.append(("special_appeal_zeroshot", "zeroshot", None))
 
-    tem_pendencia = bool(
-        pendentes_baseline or pendentes_stratified or pendentes_minority or zeroshot_pendente
-    )
+    # Pendente = falta o CSV do split OU falta algum dos mapas de id
+    # (cobre tanto "nunca rodou" quanto "rodou antes desta mudança, CSV
+    # existe mas os mapas ainda não").
+    pendentes = [
+        t for t in tarefas if not (split_ja_existe(t[0]) and ids_existem(t[0]))
+    ]
+    prontas = [t for t in tarefas if t not in pendentes]
 
-    for kind_nome, kind_pendentes in [
-        ("baseline", pendentes_baseline),
-        ("stratified", pendentes_stratified),
-        ("minority", pendentes_minority),
-    ]:
-        prontas = sorted(set(seeds) - set(kind_pendentes))
-        if prontas:
-            print(f"[CACHE] {kind_nome}: seeds já processadas (puladas): {prontas}")
+    if prontas:
+        print("[CACHE] já completos (split + mapas de id):")
+        for nome, _, _ in prontas:
+            print(f"         - {nome}")
 
-    if not tem_pendencia:
-        print("\nNada a fazer: todos os splits pedidos já existem em split/treino/.")
+    if not pendentes:
+        print("\nNada a fazer: todos os splits + mapas de appeal_id pedidos já existem.")
         return
 
     df = load_data(localizar_appeals_file())
 
     print(f"\nSeeds a usar em baseline/stratified/minority: {seeds}\n")
 
-    # 1) Baseline
-    for seed in pendentes_baseline:
-        train, test = basic_split(df, seed)
-        save_split(train, test, f"special_appeal_baseline_{seed}")
+    def construir_gerador(kind: str, seed):
+        if kind == "baseline":
+            return lambda: basic_split(df, seed)
+        if kind == "stratified":
+            return lambda: stratified_split(df, seed)
+        if kind == "minority":
+            return lambda: minority_split(df, seed)
+        if kind == "zeroshot":
+            return lambda: zero_shot_split(df)
+        raise ValueError(f"kind desconhecido: {kind}")
 
-    # 2) Estratificado
-    for seed in pendentes_stratified:
-        train, test = stratified_split(df, seed)
-        save_split(train, test, f"special_appeal_stratified_{seed}")
-
-    # 3) Few-shot (minority)
-    for seed in pendentes_minority:
-        train, test = minority_split(df, seed)
-        save_split(train, test, f"special_appeal_minority_{seed}")
-
-    # 4) Zero-shot
-    if zeroshot_pendente:
-        train, test = zero_shot_split(df)
-        save_split(train, test, "special_appeal_zeroshot")
-    else:
-        print("[CACHE] special_appeal_zeroshot já existe em split/treino/ -- pulando.")
+    for nome, kind, seed in pendentes:
+        processar_split(nome, construir_gerador(kind, seed))
 
 
 if __name__ == "__main__":
